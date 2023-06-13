@@ -1,0 +1,17 @@
+{
+  "name": "kubeStone",
+  "version": "1.0.0",
+  "dependencies": {
+  },
+  "database": {
+    "host": "localhost",
+    "port": 33306,
+    "username": "root",
+    "password": "nxera1688.",
+    "database_name": "kubeStone",
+    "volume": "/mysqlData"
+  },
+  "server": {
+    "port": 8888
+  }
+}
