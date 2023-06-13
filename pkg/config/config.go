@@ -1,5 +1,11 @@
 package config
 
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+)
+
 type Config struct {
 	Name     string `json:"name"`
 	Version  string `json:"version"`
@@ -24,5 +30,14 @@ type Server struct {
 }
 
 func InitConfig() (config Config, err error) {
+	data, err := os.ReadFile("config.json")
+	if err != nil {
+		fmt.Println("Error reading config file:", err)
+		return config, err
+	}
+	if err := json.Unmarshal(data, &config); err != nil {
+		fmt.Println("Error parsing config file:", err)
+		return config, err
+	}
 	return config, err
 }
