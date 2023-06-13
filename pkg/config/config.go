@@ -15,6 +15,13 @@ type Config struct {
 		Port int `json:"port"`
 	} `json:"server"`
 }
+type Server struct {
+	Hostname string `json:"hostname"`
+	IP       string `json:"ipaddress"`
+	Port     string `json:"port"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
 
 func InitConfig() (config Config, err error) {
 	return config, err
