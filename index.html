@@ -334,45 +334,7 @@
     }
 </script>
 
-<h1>Use GPT</h1>
-<button onclick="newSession()">New Session</button>
 
-<script>
-    function newSession() {
-        var uuid = generateUUID();
-        var sessionWindow = window.open("", "SessionWindow" + uuid, "width=600,height=600");
-        sessionWindow.document.write(`\
-            <h1>Use GPT</h1>\
-            <input type="text" id="inputText" placeholder="Enter natural language here">\
-            <button onclick="sendText()">Send to server</button>\
-            <div id="response"></div>\
-            <script>\
-                var uuid = '` + uuid + `';\
-                function sendText() {\
-                    const text = document.getElementById("inputText").value;\
-                    const xhr = new XMLHttpRequest();\
-                    xhr.open("POST", "http://192.168.102.132:8888/byGPT?uuid=" + uuid, true);\
-                    xhr.setRequestHeader("Content-Type", "text/plain;charset=UTF-8");\
-                    xhr.onreadystatechange = function () {\
-                        if (xhr.readyState === 4 && xhr.status === 200) {\
-                            document.getElementById("response").innerHTML = xhr.responseText;\
-                        }\
-                    };\
-                    xhr.send(text);\
-                }\
-            <\/script>\
-        `);
-    }
-
-    function generateUUID() {
-        var d = new Date().getTime();
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            var r = (d + Math.random() * 16) % 16 | 0;
-            d = Math.floor(d / 16);
-            return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-        });
-    }
-</script>
 
 
 
