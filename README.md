@@ -23,6 +23,7 @@ After installing mysql, create the kubeStone database and server table.
 
 install golang package
     go get golang.org/x/crypto/ssh
+    go get github.com/go-sql-driver/mysql
 
 build & run
     cd kubeStone/
@@ -33,7 +34,7 @@ then can verify the service port
     netstat -tlunp | grep 8888
 
 
-The simple front-end code is contained in the index.html file and is currently only for testing sending requests.
+
 
 
 
