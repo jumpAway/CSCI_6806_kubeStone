@@ -17,6 +17,29 @@
     </style>
 </head>
 <body>
+<h1>Server Information</h1>
 
+<button id="searchButton">Search Server</button>
+
+<div id="responseContainer"></div>
+<script>
+    // Function to send a request to the Golang server
+    function searchServer() {
+        fetch("http://192.168.102.132:8888/getServer")
+            .then(response => response.text())
+            .then(data => {
+                // Display the server information
+                const responseContainer = document.getElementById("responseContainer");
+                responseContainer.innerText = data;
+            })
+            .catch(error => {
+                console.error("Error: " + error);
+            });
+    }
+
+    // Attach click event listener to the button
+    const searchButton = document.getElementById("searchButton");
+    searchButton.addEventListener("click", searchServer);
+</script>
 </body>
 </html>

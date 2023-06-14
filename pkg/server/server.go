@@ -14,9 +14,13 @@ type engine struct {
 	router map[string]HandlerFunc
 }
 
+func (e *engine) addRoute(method string, path string, handler HandlerFunc) {
+	key := method + "-" + path
+	e.router[key] = handler
+}
 func (e *engine) InitHandler() {
 	e.router = make(map[string]HandlerFunc)
-
+	e.addRoute("GET", "/getServer", SearchSer)
 }
 func (e *engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
