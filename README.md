@@ -41,13 +41,14 @@ Access web page
 
         
 Note: 
-    Please note that the mysql needs to run manually on the same server as kubeStone, and that the configuration parameters refer to config.json.
-    The simple front-end code is contained in the index.html file and is currently only for testing sending requests.
-    No database tables are currently set up to store cluster information;
-    not currently printing cluster deployment results in the browser;
-    Cluster version currently only supports v1.26.5;
-    the network mode currently only supports calico, and since the calico yaml is not configured to automatically modify it for now, the        pod subnet needs to be specified as the default 192.168.0.0/16. otherwise the cluster network is NotReady;
-    Only single-master clusters are currently supported for deployment;
+1. Please note that the mysql needs to run manually on the same server as kubeStone, and that the configuration parameters refer to config.json.
+2. The simple front-end code is contained in the index.html file and is currently only for testing sending requests.
+3. No database tables are currently set up to store cluster information.
+4. Not currently printing cluster deployment results in the browser;
+5. Cluster version currently only supports v1.26.5;
+6. The network mode currently only supports calico, and since the calico yaml is not configured to automatically modify it for now, the pod subnet needs to be specified as the default 192.168.0.0/16. otherwise the cluster network will be NotReady;
+7. Only single-master clusters are currently supported for deployment;
+
 
 
 
