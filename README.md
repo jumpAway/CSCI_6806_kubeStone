@@ -36,7 +36,7 @@ then can verify the service port
 
     netstat -tlunp | grep 8888
 
-
+The simple front-end code is contained in the index.html file and is currently only for testing sending requests.
 
 
 
