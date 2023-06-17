@@ -1,19 +1,21 @@
 package server
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"io"
-	"kubeStone/m/v2/pkg/config"
-	"kubeStone/m/v2/pkg/database"
-	"kubeStone/m/v2/pkg/host"
+	"kubeStone/pkg/GPT"
+	"kubeStone/pkg/config"
+	"kubeStone/pkg/database"
+	"kubeStone/pkg/host"
+	"kubeStone/pkg/install"
 	"log"
 	"net/http"
-	"os/exec"
-	"strconv"
+	"os"
+	"strings"
 )
 
-// SearchSer is an HTTP handler function that responds with a list of all servers stored in a database.
 func SearchSer(writer http.ResponseWriter, _ *http.Request) {
 	var db *sql.DB
 	db, err := database.InitDB(cfg)
@@ -44,11 +46,6 @@ func SearchSer(writer http.ResponseWriter, _ *http.Request) {
 	}
 }
 
-/*
-TestSer is an HTTP handler function that attempts to establish an SSH connection to a server.
-
-The server details are provided in the HTTP request's body as a JSON object.
-*/
 func TestSer(writer http.ResponseWriter, request *http.Request) {
 	body, _ := io.ReadAll(request.Body)
 	var server config.Server
@@ -63,13 +60,6 @@ func TestSer(writer http.ResponseWriter, request *http.Request) {
 	}
 }
 
-/*
-AddSer is an HTTP handler function that adds a new server to the database.
-
-The server details are provided in the HTTP request's body as a JSON object.
-
-Before adding the server to the database, it tests the SSH connection to the server.
-*/
 func AddSer(writer http.ResponseWriter, request *http.Request) {
 	body, _ := io.ReadAll(request.Body)
 	var server config.Server
@@ -100,13 +90,6 @@ func AddSer(writer http.ResponseWriter, request *http.Request) {
 	}
 }
 
-/*
-CreateCluster is an HTTP handler function that creates a new cluster.
-
-The cluster details are provided in the HTTP request's body as a JSON array,
-
-with each element containing details about a node in the cluster.
-*/
 func CreateCluster(writer http.ResponseWriter, request *http.Request) {
 	body, _ := io.ReadAll(request.Body)
 	var cluster []config.ClusterInfo
@@ -114,22 +97,126 @@ func CreateCluster(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, "Failed to parse Create cluster request body", http.StatusBadRequest)
 		return
 	}
-	masterSet := exec.Command(config.ScriptPath+"master.sh", cluster[0].MasterIp, cluster[0].ServiceSubnet, cluster[0].PodSubnet, cluster[0].ProxyMode)
-	if err := masterSet.Run(); err != nil {
-		http.Error(writer, "Failed to setup master: "+err.Error(), http.StatusInternalServerError)
+	var db *sql.DB
+	db, err := database.InitDB(cfg)
+	if err != nil {
+		http.Error(writer, "Init Database ERROR", http.StatusInternalServerError)
 		return
 	}
+	var serMaster config.Server
+	var id int
+	err = db.QueryRow("SELECT * FROM server WHERE ip = ?", cluster[0].MasterIp).Scan(&id, &serMaster.Hostname, &serMaster.IP, &serMaster.Port, &serMaster.Username, &serMaster.Password)
+	if err != nil {
+		http.Error(writer, "Query servers from DB error", http.StatusInternalServerError)
+		return
+	}
+
+	if err = install.SetMaster(serMaster, cluster[0]); err != nil {
+		http.Error(writer, "Failed to set up environment of "+serMaster.IP+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	var seq int
 	seq = 1
 	for _, node := range cluster {
 		if node.NodeIp != "" {
-			nodeSet := exec.Command(config.ScriptPath+"node.sh", node.MasterIp, node.NodeIp, strconv.Itoa(seq))
-			seq++
-			if err := nodeSet.Run(); err != nil {
+			var serNode config.Server
+			err = db.QueryRow("SELECT * FROM server WHERE ip = ?", node.NodeIp).Scan(&id, &serNode.Hostname, &serNode.IP, &serNode.Port, &serNode.Username, &serNode.Password)
+			if err != nil {
+				http.Error(writer, "Query servers from DB error", http.StatusInternalServerError)
+				return
+			}
+			if err := install.SetNode(serNode, serMaster, seq); err != nil {
 				http.Error(writer, "Failed to setup node: "+err.Error(), http.StatusInternalServerError)
 				return
 			}
+			seq++
 		}
 	}
+	// add into database
+}
 
+func byGPT(writer http.ResponseWriter, request *http.Request) {
+	gptApiKey, err := os.ReadFile("/root/API_KEY")
+	if err != nil || len(gptApiKey) == 0 {
+		http.Error(writer, "Set API key error", http.StatusInternalServerError)
+		return
+	}
+	apiKey := strings.TrimSpace(string(gptApiKey))
+	body, err := io.ReadAll(request.Body)
+	if err != nil {
+		http.Error(writer, "receive error"+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	uuid := request.URL.Query().Get("uuid")
+	if uuid == "" {
+		http.Error(writer, "UUID not provided", http.StatusBadRequest)
+		return
+	}
+	GPT.HistoryMutex.Lock()
+	message, exist := GPT.HistoryMap[uuid]
+	if !exist {
+		message = []map[string]string{
+			{
+				"role":    "system",
+				"content": "The namespace is default, give me the yaml directly.",
+			},
+		}
+		GPT.HistoryMap[uuid] = message
+	}
+	GPT.HistoryMutex.Unlock()
+	message = append(message, map[string]string{
+		"role":    "user",
+		"content": string(body),
+	})
+	userIdea := map[string]interface{}{
+		"model":       "gpt-3.5-turbo",
+		"messages":    message,
+		"temperature": 0.7,
+	}
+
+	userIdeaText, err := json.Marshal(userIdea)
+	if err != nil {
+		http.Error(writer, "Encode request error"+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	client := &http.Client{}
+	request, err = http.NewRequest("POST", "https://api.openai.com/v1/chat/completions", bytes.NewBuffer(userIdeaText))
+	if err != nil {
+		http.Error(writer, "Error creating request: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Authorization", "Bearer "+apiKey)
+	gptResp, err := client.Do(request)
+	if err != nil {
+		http.Error(writer, "Error sending request to OpenAI API: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	var content config.GPTResponse
+	err = json.NewDecoder(gptResp.Body).Decode(&content)
+	if err != nil {
+		http.Error(writer, "Decode from GPT error"+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	answer := content.Choices[0].Message.Content
+	_, _, err = GPT.ExecuteGPT(answer)
+	if err != nil {
+		http.Error(writer, "Execute GPT error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	message = append(message, map[string]string{
+		"role":    "assistant",
+		"content": answer,
+	})
+	_, err = writer.Write([]byte(answer))
+	if err != nil {
+		http.Error(writer, "write error"+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	GPT.HistoryMutex.Lock()
+	GPT.HistoryMap[uuid] = message
+	GPT.HistoryMutex.Unlock()
 }

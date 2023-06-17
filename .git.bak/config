@@ -1,0 +1,22 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+	bare = false
+	logallrefupdates = true
+[remote "origin"]
+	url = https://github.com/jumpAway/kubeStone.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
+[branch "main"]
+	remote = guohao
+	merge = refs/heads/main
+[remote "kubeStone"]
+	url = git@github.com:jumpAway/kubeStone.git
+	fetch = +refs/heads/*:refs/remotes/kubeStone/*
+[remote "guohao"]
+	url = git@github.com:jumpAway/kubeStone.git
+	fetch = +refs/heads/*:refs/remotes/guohao/*
+[branch "v1"]
+	remote = guohao
+	merge = refs/heads/v1
+[pull]
+	rebase = true

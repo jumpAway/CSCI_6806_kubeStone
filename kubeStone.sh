@@ -22,6 +22,8 @@ install_service() {
     fi
     yum install -y httpd >/dev/null 2>&1
     cp index.html /var/www/html/
+    mkdir /var/kubeStone
+    \cp -rf install/* /var/kubeStone/
     echo "Installation successful"
     echo "Note: you should install mysql manually at this version"
 }
@@ -46,7 +48,8 @@ start_service() {
 stop_service() {
     echo "Stopping service..."
     systemctl stop httpd
-    fuser -k 8888/tcp
+    pid=$(lsof -n -i :8888 | grep LISTEN | awk '{print $2}')
+    kill -9 $pid
 }
 
 case $1 in
@@ -64,3 +67,5 @@ case $1 in
         exit 1
         ;;
 esac
+
+#10.96.0.0/12 192.168.0.0/16

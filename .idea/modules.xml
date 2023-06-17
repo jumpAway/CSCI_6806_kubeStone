@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/CSCI_6806_kubeStone.iml" filepath="$PROJECT_DIR$/.idea/CSCI_6806_kubeStone.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/kubeStone.iml" filepath="$PROJECT_DIR$/.idea/kubeStone.iml" />
     </modules>
   </component>
 </project>
