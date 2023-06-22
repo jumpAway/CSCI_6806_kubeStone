@@ -43,8 +43,12 @@ The simple front-end code is contained in the index.html file and is currently o
 
 
 The front-end page shows the three parts of the functionality that have been completed so far.
-1. Server Information：Used to display the servers that have been managed by the platform and their information.
-   When you click on "Search Server" in the browser, the browser sends a request to the back-end service. The back-end service receives the request and routes it to the appropriate handler. The handler retrieves all the server information from the Server table in the database and converts it into json format to send back to the browser. At this stage the browser will print out the json content directly and no subsequent processing is done at this time.
+1. Server Information：
+   Used to display the servers that have been managed by the platform and their information.
+When you click on "Search Server" in the browser, the browser sends a request to the back-end service. The back-end service receives the request and routes it to the appropriate handler. The handler retrieves all the server information from the Server table in the database and converts it into json format to send back to the browser. At this stage the browser will print out the json content directly and no subsequent processing is done at this time.
+<img width="667" alt="image" src="https://github.com/jumpAway/CSCI_6806_kubeStone/assets/134755433/7cd4ee6d-732e-4f4a-86d4-fd8d2ae2bab9">
+
+2. 
 
 
 
