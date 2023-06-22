@@ -43,12 +43,26 @@ The simple front-end code is contained in the index.html file and is currently o
 
 
 The front-end page shows the three parts of the functionality that have been completed so far.
-1. Server Information：
+1. Server Information
    Used to display the servers that have been managed by the platform and their information.
 When you click on "Search Server" in the browser, the browser sends a request to the back-end service. The back-end service receives the request and routes it to the appropriate handler. The handler retrieves all the server information from the Server table in the database and converts it into json format to send back to the browser. At this stage the browser will print out the json content directly and no subsequent processing is done at this time.
 <img width="667" alt="image" src="https://github.com/jumpAway/CSCI_6806_kubeStone/assets/134755433/7cd4ee6d-732e-4f4a-86d4-fd8d2ae2bab9">
 
-2. 
+2. Add Server
+   This panel is used to test and add new servers to the database. The user enters the new server information in the form, after which he can click Test or Submit. The test is to verify the server's connectivity via ssh only, without doing any subsequent operations. Submit is for the backend to verify the server connectivity first, if it passes then add the server information to the database and return the result to the browser.
+<img width="666" alt="image" src="https://github.com/jumpAway/CSCI_6806_kubeStone/assets/134755433/f7f48bbe-519d-46a9-87a3-03c13b2342a4">
+
+3. Cluster Setup
+   After the servers are joined, select the managed servers to create a Kubernetes cluster. The user needs to add the role (master/node) first and then select the server that is already in the database in the form. For master, you need to enter the Kubernetes-related initialization configuration, which allows you to customize the service subnet, pod subnet, and kubeproxy proxy mode (iptables/ipvs). After that, click Create and the backend service will automatically issue the deployment task to the target server.
+<img width="820" alt="image" src="https://github.com/jumpAway/CSCI_6806_kubeStone/assets/134755433/40065856-cf4d-4745-a05c-3220ef0defd1">
+
+   
+Note: No database tables are currently set up to store cluster information;
+    not currently printing cluster deployment results in the browser;
+    Cluster version currently only supports v1.26.5;
+    the network mode currently only supports calico, and since the calico yaml is not configured to automatically modify it for now, the        pod subnet needs to be specified as the default 192.168.0.0/16. otherwise the cluster network is NotReady;
+    Only single-master clusters are currently supported for deployment;
+
 
 
 
