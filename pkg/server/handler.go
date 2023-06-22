@@ -11,6 +11,7 @@ import (
 	"net/http"
 )
 
+// SearchSer is an HTTP handler function that responds with a list of all servers stored in a database.
 func SearchSer(writer http.ResponseWriter, _ *http.Request) {
 	var db *sql.DB
 	db, err := database.InitDB(cfg)
@@ -41,6 +42,11 @@ func SearchSer(writer http.ResponseWriter, _ *http.Request) {
 	}
 }
 
+/*
+TestSer is an HTTP handler function that attempts to establish an SSH connection to a server.
+
+The server details are provided in the HTTP request's body as a JSON object.
+*/
 func TestSer(writer http.ResponseWriter, request *http.Request) {
 	body, _ := io.ReadAll(request.Body)
 	var server config.Server
@@ -55,6 +61,13 @@ func TestSer(writer http.ResponseWriter, request *http.Request) {
 	}
 }
 
+/*
+AddSer is an HTTP handler function that adds a new server to the database.
+
+The server details are provided in the HTTP request's body as a JSON object.
+
+Before adding the server to the database, it tests the SSH connection to the server.
+*/
 func AddSer(writer http.ResponseWriter, request *http.Request) {
 	body, _ := io.ReadAll(request.Body)
 	var server config.Server

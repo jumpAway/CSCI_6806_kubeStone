@@ -8,6 +8,7 @@ import (
 	"strconv"
 )
 
+// InitDB is a function that initializes a connection to a MySQL database using the provided configuration.
 func InitDB(config config.Config) (*sql.DB, error) {
 	dsn := config.Database.Username + ":" + config.Database.Password + "@tcp(" + config.Database.Host + ":" + strconv.Itoa(config.Database.Port) + ")/" + config.Database.DatabaseName
 	db, err := sql.Open("mysql", dsn)

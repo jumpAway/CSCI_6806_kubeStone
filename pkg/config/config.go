@@ -38,8 +38,11 @@ type Server struct {
 	Password string `json:"password"`
 }
 
-/* InitConfig is a function that reads a configuration file named "config.json",
-deserializes the JSON data into a Config struct, and returns it.*/
+/*
+	InitConfig is a function that reads a configuration file named "config.json",
+
+deserializes the JSON data into a Config struct, and returns it.
+*/
 func InitConfig() (config Config, err error) {
 	data, err := os.ReadFile("config.json")
 	if err != nil {

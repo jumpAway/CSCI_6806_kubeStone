@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// ConnectSer is a function that establishes an SSH connection to a remote server using the provided configuration.
 func ConnectSer(server config.Server) error {
 	sshCfg := &ssh.ClientConfig{
 		User: server.Username,
