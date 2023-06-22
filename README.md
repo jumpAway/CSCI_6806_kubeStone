@@ -54,7 +54,8 @@ When you click on "Search Server" in the browser, the browser sends a request to
 
 3. Cluster Setup
    After the servers are joined, select the managed servers to create a Kubernetes cluster. The user needs to add the role (master/node) first and then select the server that is already in the database in the form. For master, you need to enter the Kubernetes-related initialization configuration, which allows you to customize the service subnet, pod subnet, and kubeproxy proxy mode (iptables/ipvs). After that, click Create and the backend service will automatically issue the deployment task to the target server.
-<img width="820" alt="image" src="https://github.com/jumpAway/CSCI_6806_kubeStone/assets/134755433/40065856-cf4d-4745-a05c-3220ef0defd1">
+<img width="790" alt="image" src="https://github.com/jumpAway/CSCI_6806_kubeStone/assets/134755433/73a1469b-1371-48ca-9c87-8d875558f2b0">
+
 
    
 Note: No database tables are currently set up to store cluster information;
