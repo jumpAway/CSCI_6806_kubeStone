@@ -9,6 +9,8 @@ import (
 	"kubeStone/m/v2/pkg/host"
 	"log"
 	"net/http"
+	"os/exec"
+	"strconv"
 )
 
 // SearchSer is an HTTP handler function that responds with a list of all servers stored in a database.
@@ -96,4 +98,38 @@ func AddSer(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, "Add Server not Success", http.StatusInternalServerError)
 		return
 	}
+}
+
+/*
+CreateCluster is an HTTP handler function that creates a new cluster.
+
+The cluster details are provided in the HTTP request's body as a JSON array,
+
+with each element containing details about a node in the cluster.
+*/
+func CreateCluster(writer http.ResponseWriter, request *http.Request) {
+	body, _ := io.ReadAll(request.Body)
+	var cluster []config.ClusterInfo
+	if err := json.Unmarshal(body, &cluster); err != nil {
+		http.Error(writer, "Failed to parse Create cluster request body", http.StatusBadRequest)
+		return
+	}
+	masterSet := exec.Command(config.ScriptPath+"master.sh", cluster[0].MasterIp, cluster[0].ServiceSubnet, cluster[0].PodSubnet, cluster[0].ProxyMode)
+	if err := masterSet.Run(); err != nil {
+		http.Error(writer, "Failed to setup master: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	var seq int
+	seq = 1
+	for _, node := range cluster {
+		if node.NodeIp != "" {
+			nodeSet := exec.Command(config.ScriptPath+"node.sh", node.MasterIp, node.NodeIp, strconv.Itoa(seq))
+			seq++
+			if err := nodeSet.Run(); err != nil {
+				http.Error(writer, "Failed to setup node: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+	}
+
 }

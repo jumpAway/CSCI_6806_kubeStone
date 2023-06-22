@@ -6,6 +6,8 @@ import (
 	"os"
 )
 
+const ScriptPath = "/root/kubeStone/install/"
+
 /*
 The Config struct represents a configuration object.
 It is used to hold configurations for a software application.
@@ -36,6 +38,22 @@ type Server struct {
 	Port     string `json:"port"`
 	Username string `json:"username"`
 	Password string `json:"password"`
+}
+
+/*
+ClusterInfo is a struct that represents information about a cluster.
+
+The struct fields represent various details about the cluster, and are tagged with JSON keys,
+
+which will be used when the struct is serialized to JSON or deserialized from JSON.
+*/
+type ClusterInfo struct {
+	MasterIp      string `json:"Server,omitempty"`
+	Version       string `json:"Version,omitempty"`
+	ServiceSubnet string `json:"ServiceSubnet,omitempty"`
+	PodSubnet     string `json:"PodSubnet,omitempty"`
+	ProxyMode     string `json:"ProxyMode,omitempty"`
+	NodeIp        string `json:"ServerAddress,omitempty"`
 }
 
 /*
