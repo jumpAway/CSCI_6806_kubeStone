@@ -3,16 +3,127 @@
 <head>
     <title>Server Information</title>
     <style>
+        body {
+            background-color: #f2f2f2;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
         #responseContainer {
             margin-top: 20px;
             border: 1px solid #ccc;
             padding: 10px;
+            background-color: #fff;
         }
+        
         .input-form {
             display: none;
         }
+        
         .input-form.active {
             display: block;
+        }
+        
+        form {
+            margin-top: 20px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 4px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        input[type="text"],
+        input[type="password"],
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+        }
+        
+        button {
+            background-color: #4CAF50;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        #result {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        
+        #role-container {
+            margin-top: 20px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 4px;
+        }
+        
+        .role-select {
+            margin-bottom: 10px;
+        }
+        
+        .role-select:last-child {
+            margin-bottom: 0;
+        }
+        
+        .role {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+        }
+        
+        .input-form select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+        }
+        
+        .input-form input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+        }
+        
+        #add-button,
+        #create-button {
+            background-color: #4CAF50;
+            color: #fff;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        
+        #add-button:hover,
+        #create-button:hover {
+            background-color: #45a049;
         }
     </style>
 </head>
@@ -42,27 +153,29 @@
     const searchButton = document.getElementById("searchButton");
     searchButton.addEventListener("click", searchServer);
 </script>
+
 <h1>Add Server</h1>
 
 <form id="serverForm">
     <label for="hostname">Hostname:</label>
-    <input type="text" id="hostname" name="hostname"><br><br>
+    <input type="text" id="hostname" name="hostname">
 
     <label for="ipaddress">IP Address:</label>
-    <input type="text" id="ipaddress" name="ipaddress"><br><br>
+    <input type="text" id="ipaddress" name="ipaddress">
 
     <label for="port">Port:</label>
-    <input type="text" id="port" name="port"><br><br>
+    <input type="text" id="port" name="port">
 
     <label for="username">Username:</label>
-    <input type="text" id="username" name="username"><br><br>
+    <input type="text" id="username" name="username">
 
     <label for="password">Password:</label>
-    <input type="password" id="password" name="password"><br><br>
+    <input type="password" id="password" name="password">
 
     <button onclick="addServer()">Submit</button>
     <button onclick="testConnectivity()">Test Connectivity</button>
 </form>
+
 <div id="result"></div>
 <script>
     document.getElementById("serverForm").addEventListener("submit", function(event) {event.preventDefault();});
