@@ -6,7 +6,7 @@ The platform also provides both online and offline installation modes to meet th
 2. [Usage](#usage)
 3. [Contributing](#contributing)
 
-## Installation
+## Installation （Require Centos 7+）
 1.
 Reading external configuration files and automatic database installation are not implemented at the mid-term stage yet.
 Currently, only the database for servers is set up. Before running the service you need to configure the mysql database manually and write the database information to config.json.
