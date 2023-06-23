@@ -22,6 +22,7 @@
 <button id="searchButton">Search Server</button>
 
 <div id="responseContainer"></div>
+
 <script>
     // Function to send a request to the Golang server
     function searchServer() {
@@ -41,5 +42,226 @@
     const searchButton = document.getElementById("searchButton");
     searchButton.addEventListener("click", searchServer);
 </script>
+<h1>Add Server</h1>
+
+<form id="serverForm">
+    <label for="hostname">Hostname:</label>
+    <input type="text" id="hostname" name="hostname"><br><br>
+
+    <label for="ipaddress">IP Address:</label>
+    <input type="text" id="ipaddress" name="ipaddress"><br><br>
+
+    <label for="port">Port:</label>
+    <input type="text" id="port" name="port"><br><br>
+
+    <label for="username">Username:</label>
+    <input type="text" id="username" name="username"><br><br>
+
+    <label for="password">Password:</label>
+    <input type="password" id="password" name="password"><br><br>
+
+    <button onclick="addServer()">Submit</button>
+    <button onclick="testConnectivity()">Test Connectivity</button>
+</form>
+<div id="result"></div>
+<script>
+    document.getElementById("serverForm").addEventListener("submit", function(event) {event.preventDefault();});
+    function InitSer(){
+        return {
+            hostname: document.getElementById("hostname").value,
+            ipaddress: document.getElementById("ipaddress").value,
+            port: document.getElementById("port").value,
+            username: document.getElementById("username").value,
+            password: document.getElementById("password").value
+        }
+    }
+    function testConnectivity() {
+        const formData = InitSer();
+        fetch("http://192.168.102.132:8888/testServer", {
+            method: "POST",
+            body: JSON.stringify(formData),
+            headers: {
+                "Content-Type": "application/json"
+            }
+        })
+            .then(function(response) {
+                if (response.ok) {
+                    document.getElementById('result').textContent = 'ACCESS SERVER SUCCESS';
+                } else {
+                    document.getElementById('result').textContent = 'ACCESS SERVER NOT SUCCESS';
+                }
+            })
+            .catch(function(error) {
+                console.log(error);
+            });
+    }
+
+    function addServer() {
+        const formData = InitSer();
+        fetch("http://192.168.102.132:8888/addServer", {
+            method: "POST",
+            body: JSON.stringify(formData),
+            headers: {
+                "Content-Type": "application/json"
+            }
+        })
+            .then(function(response) {
+                if (response.ok) {
+                    document.getElementById('result').textContent = 'ADD SERVER SUCCESS';
+                } else {
+                    response.text().then(errorMessage => {
+                        document.getElementById('result').textContent = errorMessage;
+                    });
+                }
+            })
+            .catch(function(error) {
+                console.log(error);
+            });
+    }
+
+</script>
+<h1>Cluster Setup</h1>
+<div id="role-container">
+    <div class="role-select">
+        <select class="role">
+            <option value="">Select role...</option>
+            <option value="master">Master</option>
+            <option value="node">Node</option>
+        </select>
+        <div class="input-form master-form">
+            Server:
+            <select class="server">
+                <!-- Server options will be populated dynamically -->
+            </select><br />
+            Version: <input type="text" name="Version" /><br />
+            ServiceSubnet: <input type="text" name="ServiceSubnet" /><br />
+            PodSubnet: <input type="text" name="PodSubnet" /><br />
+            <label>ProxyMode: </label>
+            <select name="ProxyMode">
+                <option value="ipvs">ipvs</option>
+                <option value="iptables">iptables</option>
+            </select>
+        </div>
+        <div class="input-form node-form">
+            ServerAddress:
+            <select class="server-address">
+                <!-- ServerAddress options will be same as Server -->
+            </select><br />
+        </div>
+    </div>
+</div>
+<button id="add-button">+</button>
+<button id="create-button">Create</button>
+
+<script>
+    document.getElementById('add-button').addEventListener('click', function() {
+        var clone = document.querySelector('.role-select').cloneNode(true);
+        document.getElementById('role-container').appendChild(clone);
+        addRoleEventListener(clone.querySelector('.role'));
+    });
+
+    document.getElementById('create-button').addEventListener('click', function() {
+        var roles = Array.from(document.querySelectorAll('.role-select')).map(function(select) {
+            var role = select.querySelector('.role').value;
+            var data = {};
+            if (role === 'master') {
+                data.Server = select.querySelector('.server').value;
+                data.Version = select.querySelector('[name="Version"]').value;
+                data.ServiceSubnet = select.querySelector('[name="ServiceSubnet"]').value;
+                data.PodSubnet = select.querySelector('[name="PodSubnet"]').value;
+                data.ProxyMode = select.querySelector('[name="ProxyMode"]').value;
+            } else if (role === 'node') {
+                data.ServerAddress = select.querySelector('.server-address').value;
+            }
+            return data;
+        });
+
+        fetch('http://192.168.102.132:8888/createCluster', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(roles)
+        })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+    });
+
+    Array.from(document.querySelectorAll('.role')).forEach(addRoleEventListener);
+
+    function addRoleEventListener(select) {
+        select.addEventListener('change', function() {
+            var form = this.parentNode.querySelector('.input-form.active');
+            if (form) form.classList.remove('active');
+            if (this.value) this.parentNode.querySelector('.' + this.value + '-form').classList.add('active');
+            if (this.value === 'master' || this.value === 'node') {
+                fetchServers(this.parentNode.querySelector('.' + this.value + '-form').querySelector('select'));
+            }
+        });
+    }
+
+    function fetchServers(select) {
+        fetch('http://192.168.102.132:8888/getServer')
+            .then(response => response.json())
+            .then(data => {
+                select.innerHTML = '';
+                data.forEach(server => {
+                    var option = document.createElement('option');
+                    option.text = server.ipaddress;
+                    option.value = server.ipaddress;
+                    select.add(option);
+                });
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+    }
+</script>
+
+<h1>Use GPT</h1>
+<button onclick="newSession()">New Session</button>
+
+<script>
+    function newSession() {
+        var uuid = generateUUID();
+        var sessionWindow = window.open("", "SessionWindow" + uuid, "width=600,height=600");
+        sessionWindow.document.write(`\
+            <h1>Use GPT</h1>\
+            <input type="text" id="inputText" placeholder="Enter natural language here">\
+            <button onclick="sendText()">Send to server</button>\
+            <div id="response"></div>\
+            <script>\
+                var uuid = '` + uuid + `';\
+                function sendText() {\
+                    const text = document.getElementById("inputText").value;\
+                    const xhr = new XMLHttpRequest();\
+                    xhr.open("POST", "http://192.168.102.132:8888/byGPT?uuid=" + uuid, true);\
+                    xhr.setRequestHeader("Content-Type", "text/plain;charset=UTF-8");\
+                    xhr.onreadystatechange = function () {\
+                        if (xhr.readyState === 4 && xhr.status === 200) {\
+                            document.getElementById("response").innerHTML = xhr.responseText;\
+                        }\
+                    };\
+                    xhr.send(text);\
+                }\
+            <\/script>\
+        `);
+    }
+
+    function generateUUID() {
+        var d = new Date().getTime();
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = (d + Math.random() * 16) % 16 | 0;
+            d = Math.floor(d / 16);
+            return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+    }
+</script>
+
+
+
 </body>
 </html>
