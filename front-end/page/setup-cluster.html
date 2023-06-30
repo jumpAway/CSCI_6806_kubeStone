@@ -63,13 +63,20 @@
         #create-button:hover {
             background-color: #45a049;
         }
+
+        .input-form {
+            display: none; /* Hidden by default */
+        }
+
+        .active {
+            display: block; /* Show when class "active" is added */
+        }
     </style>
 
 </head>
 
 <body>
-<h1>Setup Cluster</h1>
-
+<h1>Cluster Setup</h1>
 <div id="role-container">
     <div class="role-select">
         <select class="role">
@@ -78,7 +85,7 @@
             <option value="node">Node</option>
         </select>
         <div class="input-form master-form">
-            Server:
+            MasterServer:
             <select class="server">
                 <!-- Server options will be populated dynamically -->
             </select><br />
@@ -92,7 +99,7 @@
             </select>
         </div>
         <div class="input-form node-form">
-            ServerAddress:
+            NodeServer:
             <select class="server-address">
                 <!-- ServerAddress options will be same as Server -->
             </select><br />
@@ -169,9 +176,6 @@
             });
     }
 </script>
-
-
-<script src='script.js'></script>
 
 </body>
 </html>
