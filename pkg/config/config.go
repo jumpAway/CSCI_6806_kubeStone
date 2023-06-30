@@ -6,8 +6,6 @@ import (
 	"os"
 )
 
-const ScriptPath = "/root/kubeStone/install/"
-
 type Config struct {
 	Name     string `json:"name"`
 	Version  string `json:"version"`
@@ -39,6 +37,18 @@ type ClusterInfo struct {
 	PodSubnet     string `json:"PodSubnet,omitempty"`
 	ProxyMode     string `json:"ProxyMode,omitempty"`
 	NodeIp        string `json:"ServerAddress,omitempty"`
+}
+
+type Cluster struct {
+	ClusterName   string `json:"ClusterName,omitempty"`
+	Version       string `json:"Version,omitempty"`
+	CNI           string `json:"CNI,omitempty"`
+	ServiceSubnet string `json:"ServiceSubnet,omitempty"`
+	PodSubnet     string `json:"PodSubnet,omitempty"`
+	ProxyMode     string `json:"ProxyMode,omitempty"`
+	Master        string `json:"Master,omitempty"`
+	Node          string `json:"Node,omitempty"`
+	Context       string `json:"Context,omitempty"`
 }
 
 type GPTResponse struct {

@@ -118,9 +118,9 @@ func CreateCluster(writer http.ResponseWriter, request *http.Request) {
 
 	var seq int
 	seq = 1
+	var serNode config.Server
 	for _, node := range cluster {
 		if node.NodeIp != "" {
-			var serNode config.Server
 			err = db.QueryRow("SELECT * FROM server WHERE ip = ?", node.NodeIp).Scan(&id, &serNode.Hostname, &serNode.IP, &serNode.Port, &serNode.Username, &serNode.Password)
 			if err != nil {
 				http.Error(writer, "Query servers from DB error", http.StatusInternalServerError)
@@ -134,6 +134,43 @@ func CreateCluster(writer http.ResponseWriter, request *http.Request) {
 		}
 	}
 	// add into database
+	_, err = db.Exec("INSERT INTO cluster (cluster_name, version, CNI,ServiceSubnet ,PodSubnet,ProxyMode, master, node,context) VALUES (?,?,?,?,?,?,?,?,?)", "cluster1", "1.26.5", "Calico", cluster[0].ServiceSubnet, cluster[0].PodSubnet, cluster[0].ProxyMode, serMaster.IP, serNode.IP, "context1")
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func searchCluster(writer http.ResponseWriter, _ *http.Request) {
+	var db *sql.DB
+	db, err := database.InitDB(cfg)
+	if err != nil {
+		http.Error(writer, "Init Database ERROR", http.StatusInternalServerError)
+		return
+	}
+	clusterRow, err := db.Query("SELECT * FROM cluster")
+	if err != nil {
+		http.Error(writer, "Query servers from DB error", http.StatusInternalServerError)
+		return
+	}
+	clusters := make([]config.Cluster, 0)
+	var nodeSeq int
+	nodeSeq = 0
+	for clusterRow.Next() {
+		var cluster config.Cluster
+		var id int
+		if err := clusterRow.Scan(&id, &cluster.ClusterName, &cluster.Version, &cluster.CNI, &cluster.ServiceSubnet, &cluster.PodSubnet, &cluster.ProxyMode, &cluster.Master, &cluster.Node, &cluster.Context); err != nil {
+			http.Error(writer, "Show servers from DB error", http.StatusInternalServerError)
+			return
+		}
+		nodeSeq++
+		clusters = append(clusters, cluster)
+	}
+	writer.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(writer).Encode(clusters); err != nil {
+		http.Error(writer, "Response error", http.StatusInternalServerError)
+		return
+	}
 }
 
 func byGPT(writer http.ResponseWriter, request *http.Request) {
