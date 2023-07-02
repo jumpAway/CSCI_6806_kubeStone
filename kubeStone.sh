@@ -16,6 +16,7 @@ install_service() {
         fi
         go get golang.org/x/crypto/ssh
         go get github.com/go-sql-driver/mysql
+        go get k8s.io/client-go/tools/clientcmd
     else
         echo "Please setup Golang First"
         exit -1

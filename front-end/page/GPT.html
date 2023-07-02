@@ -2,6 +2,7 @@
 <html lang="en" >
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GPT</title>
   <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css'>
   <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css'><link rel="stylesheet" href="./style.css">
@@ -21,15 +22,92 @@
     #jump-button:hover {
       background-color: #45a049;
     }
+    select {
+      width: 200px;
+      height: 30px;
+    }
   </style>
-
 </head>
 
 <body>
 <h1>Use GPT</h1>
 <button id="jump-button" onclick="newSession()">New Session</button>
+<select id="clusterDropdown">
+  <option value="">Select a cluster</option>
+</select>
+
+<select id="namespaceDropdown">
+  <option value="">Select a namespace</option>
+</select>
 
 <script>
+  function fetchClusters() {
+    const dropdown = document.getElementById('clusterDropdown');
+
+    // Make an AJAX request to the backend service
+    fetch('http://192.168.102.132:8888/getCluster')
+            .then(response => response.json())
+            .then(data => {
+              // Iterate through the returned data and append options to the dropdown
+              data.forEach(cluster => {
+                const option = document.createElement('option');
+                option.value = cluster.ClusterName; // Assuming the property name is 'ClusterName'
+                option.textContent = cluster.ClusterName;
+                dropdown.appendChild(option);
+              });
+            })
+            .catch(error => console.error('Error fetching clusters:', error));
+  }
+
+  // Function to fetch namespaces based on selected cluster and populate second dropdown
+  function fetchNamespaces(cluster) {
+    const dropdown = document.getElementById('namespaceDropdown');
+
+    // Clear existing options
+    dropdown.innerHTML = '<option value="">Select a namespace</option>';
+
+    // Make an AJAX request to the backend service
+    fetch('http://192.168.102.132:8888/getClusterNS', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cluster })
+    })
+            .then(response => response.json())
+            .then(data => {
+              // Iterate through the returned data and append options to the dropdown
+              data.items.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.metadata.name; // Assuming the property name is 'namespace'
+                option.textContent = item.metadata.name;
+                dropdown.appendChild(option);
+              });
+            })
+            .catch(error => console.error('Error fetching namespaces:', error));
+  }
+
+  // Attach an event listener to the first dropdown
+  document.getElementById('clusterDropdown').addEventListener('change', function() {
+    const selectedCluster = this.value;
+    const namespaceDropdown = document.getElementById('namespaceDropdown');
+
+    // If 'Select a cluster' is chosen, clear the second dropdown
+    if (!selectedCluster) {
+      namespaceDropdown.innerHTML = '<option value="">Select a namespace</option>';
+      return;
+    }
+
+    // Fetch namespaces for the selected cluster
+    fetchNamespaces(selectedCluster);
+  });
+
+  // Call the fetchClusters function on page load
+  window.onload = fetchClusters;
+
+
+
+
+
+
   function newSession() {
     var uuid = generateUUID();
     var sessionWindow = window.open("", "SessionWindow" + uuid, "width=600,height=600");

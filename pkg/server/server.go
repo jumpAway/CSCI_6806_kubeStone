@@ -24,6 +24,7 @@ func (e *engine) InitHandler() {
 	e.addRoute("GET", "/getServer", SearchSer)
 	e.addRoute("POST", "/testServer", TestSer)
 	e.addRoute("POST", "/addServer", AddSer)
+	e.addRoute("POST", "/getClusterNS", getClusterNS)
 	e.addRoute("GET", "/getCluster", searchCluster)
 	e.addRoute("POST", "/createCluster", CreateCluster)
 	e.addRoute("POST", "/byGPT", byGPT)
