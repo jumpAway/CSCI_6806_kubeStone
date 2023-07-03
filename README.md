@@ -9,7 +9,7 @@ The platform also provides both online and offline installation modes to meet th
 ## Installation
 1.
 Reading external configuration files and automatic database installation are not implemented at the mid-term stage yet.
-Currently, only the database for servers is set up. Before running the service you need to configure the mysql database manually and write the database information to config.json.
+Currently, only the database for servers is set up. Before running the service you need to configure the mysql database manually and write the database information to config.json.1
 After installing mysql, create the kubeStone database and server table.
 
     mysql>
