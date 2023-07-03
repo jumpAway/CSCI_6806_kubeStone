@@ -43,6 +43,8 @@
 
 <h1>GPT History Information</h1>
 <div id="historyContainer" style="display:none;"></div>
+<div id="messageContainer" style="display:none;"></div>
+
 
 <script>
   function fetchClusters() {
@@ -180,7 +182,7 @@
               // Create table header
               let thead = table.createTHead();
               let headerRow = thead.insertRow();
-              ['Id',  'Timestamp', 'Cluster', 'Namespace', 'Model', 'Temperature'].forEach(header => {
+              ['Id', 'Timestamp', 'Cluster', 'Namespace', 'Model', 'Temperature', 'Action'].forEach(header => {
                 let th = document.createElement('th');
                 th.innerText = header;
                 headerRow.appendChild(th);
@@ -190,10 +192,19 @@
               let tbody = document.createElement('tbody');
               data.forEach(item => {
                 let row = tbody.insertRow();
-                ['id',  'timestamp', 'cluster', 'namespace', 'model', 'temperature'].forEach(key => {
+                ['id', 'timestamp', 'cluster', 'namespace', 'model', 'temperature'].forEach(key => {
                   let cell = row.insertCell();
                   cell.innerText = item[key];
                 });
+
+                // Add the button to the row
+                let cell = row.insertCell();
+                let button = document.createElement('button');
+                button.innerText = 'Get Message';
+                button.onclick = function() {
+                  fetchMessage(item.id);
+                };
+                cell.appendChild(button);
               });
 
               // Append tbody to table
@@ -208,6 +219,62 @@
               console.error("Error fetching the history data: ", error);
             });
   }
+
+  function fetchMessage(historyId) {
+    const requestOptions = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ "object": "message", "historyId": historyId })
+    };
+
+    fetch("http://192.168.102.132:8888/gptHistory", requestOptions)
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('Network response was not ok');
+              }
+              return response.json();
+            })
+            .then(data => {
+              let messageTable = document.createElement('table');
+              messageTable.className = 'table';
+
+              // Create table header
+              let thead = messageTable.createTHead();
+              let headerRow = thead.insertRow();
+              [ 'Role', 'Content'].forEach(header => {
+                let th = document.createElement('th');
+                th.innerText = header;
+                headerRow.appendChild(th);
+              });
+
+              // Populate the message table
+              let tbody = document.createElement('tbody');
+
+              // Loop through each message in the data
+              data.forEach(item => {
+                let row = tbody.insertRow();
+                [ 'role', 'content'].forEach(key => {
+                  let cell = row.insertCell();
+                  cell.innerText = item[key];
+                });
+              });
+
+              // Append tbody to table
+              messageTable.appendChild(tbody);
+
+              // Clear the contents of the message container
+              const messageContainer = document.getElementById('messageContainer');
+              messageContainer.innerHTML = '';
+
+              // Display the message table
+              messageContainer.appendChild(messageTable);
+              messageContainer.style.display = 'block';
+            })
+            .catch(error => {
+              console.error("Error fetching the message data: ", error);
+            });
+  }
+
 
 
 </script>

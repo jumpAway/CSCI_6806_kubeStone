@@ -179,13 +179,6 @@ func getClusterNS(writer http.ResponseWriter, request *http.Request) {
 	type ClusterRequest struct {
 		Cluster string `json:"cluster"`
 	}
-	type NamespaceList struct {
-		Items []struct {
-			Metadata struct {
-				Name string `json:"name"`
-			} `json:"metadata"`
-		} `json:"items"`
-	}
 	body, _ := io.ReadAll(request.Body)
 	var clusterReq ClusterRequest
 	err := json.Unmarshal(body, &clusterReq)
@@ -243,7 +236,7 @@ func getClusterNS(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, "Error reading response body", http.StatusInternalServerError)
 		return
 	}
-	var namespaces NamespaceList
+	var namespaces config.Namespace
 	err = json.Unmarshal(body, &namespaces)
 	if err != nil {
 		http.Error(writer, "Error unmarshalling response body", http.StatusInternalServerError)
@@ -436,7 +429,99 @@ func GptHistory(writer http.ResponseWriter, request *http.Request) {
 			return
 		}
 	} else if gptReq.Object == "message" {
+		serRow, err := db.Query("SELECT * FROM gptMessage where history_id=?", gptReq.HistoryId)
+		if err != nil {
+			http.Error(writer, "Query servers from DB error", http.StatusInternalServerError)
+			return
+		}
+		messageS := make([]config.GPTMessage, 0)
+		for serRow.Next() {
+			var message config.GPTMessage
+			if err := serRow.Scan(&message.Id, &message.HistoryId, &message.Role, &message.Content); err != nil {
+				http.Error(writer, "Show servers from DB error", http.StatusInternalServerError)
+				return
+			}
+			messageS = append(messageS, message)
+		}
+		writer.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(writer).Encode(messageS); err != nil {
+			http.Error(writer, "Response error", http.StatusInternalServerError)
+			return
+		}
+	}
+}
 
+func getClusterPod(writer http.ResponseWriter, request *http.Request) {
+	type ClusterRequest struct {
+		Cluster string `json:"cluster"`
+	}
+	body, _ := io.ReadAll(request.Body)
+	var clusterReq ClusterRequest
+	err := json.Unmarshal(body, &clusterReq)
+	if err != nil {
+		http.Error(writer, "Error parsing request body", http.StatusBadRequest)
+		return
+	}
+	var db *sql.DB
+	db, err = database.InitDB(cfg)
+	if err != nil {
+		http.Error(writer, "Init Database ERROR", http.StatusInternalServerError)
+		return
+	}
+	var cluster config.Cluster
+	var id int
+	err = db.QueryRow("SELECT * FROM cluster WHERE cluster_name = ?", clusterReq.Cluster).Scan(&id, &cluster.ClusterName, &cluster.Version, &cluster.CNI, &cluster.ServiceSubnet, &cluster.PodSubnet, &cluster.ProxyMode, &cluster.Master, &cluster.Node, &cluster.Context)
+	if err != nil {
+		http.Error(writer, "Query servers from DB error", http.StatusInternalServerError)
+		return
+	}
+	ConfigFile := filepath.Join(homedir.HomeDir(), ".kube", "config")
+	kubeConfig, err := clientcmd.LoadFromFile(ConfigFile)
+	if err != nil {
+		http.Error(writer, "Failed to load kubeConfig", http.StatusInternalServerError)
+		return
 	}
 
+	var token string
+	for contextName, context := range kubeConfig.Contexts {
+		if contextName == cluster.Context {
+			token = kubeConfig.AuthInfos[context.AuthInfo].Token
+			break
+		}
+	}
+	req, err := http.NewRequest("GET", "https://"+cluster.Master+":6443/api/v1/namespaces", nil)
+	if err != nil {
+		http.Error(writer, "Error creating request", http.StatusInternalServerError)
+		return
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		http.Error(writer, "Error sending request to Kubernetes API", http.StatusInternalServerError)
+		return
+	}
+
+	body, err = io.ReadAll(resp.Body)
+	if err != nil {
+		http.Error(writer, "Error reading response body", http.StatusInternalServerError)
+		return
+	}
+	var namespaces config.Namespace
+	err = json.Unmarshal(body, &namespaces)
+	if err != nil {
+		http.Error(writer, "Error unmarshalling response body", http.StatusInternalServerError)
+		return
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(writer).Encode(namespaces); err != nil {
+		http.Error(writer, "Response error", http.StatusInternalServerError)
+		return
+	}
 }

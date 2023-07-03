@@ -86,6 +86,21 @@ type GPTHistory struct {
 	Temperature string `json:"temperature"`
 }
 
+type GPTMessage struct {
+	Id        string `json:"id"`
+	HistoryId string `json:"history_id"`
+	Role      string `json:"role"`
+	Content   string `json:"content"`
+}
+
+type Namespace struct {
+	Items []struct {
+		Metadata struct {
+			Name string `json:"name"`
+		} `json:"metadata"`
+	} `json:"items"`
+}
+
 func InitConfig() (config Config, err error) {
 	data, err := os.ReadFile("config.json")
 	if err != nil {
