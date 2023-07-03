@@ -22,6 +22,37 @@ After installing mysql, create the kubeStone database and server table.
         -> user VARCHAR(255) NOT NULL,
         -> password VARCHAR(255) NOT NULL               //Temporarily stored in plaintext for testing purposes only.
         -> );
+
+        > CREATE TABLE cluster (
+        -> id INT AUTO_INCREMENT PRIMARY KEY,
+        -> cluster_name VARCHAR(255) NOT NULL UNIQUE,
+        -> version VARCHAR(15) NOT NULL,
+        -> CNI VARCHAR(15) NOT NULL,
+        -> ServiceSubnet VARCHAR(15) NOT NULL,
+        -> PodSubnet VARCHAR(15) NOT NULL,
+        -> ProxyMode VARCHAR(15) NOT NULL,
+        -> master VARCHAR(15) NOT NULL,
+        -> node VARCHAR(255) NOT NULL,
+        -> context VARCHAR(255) NOT NULL UNIQUE
+        -> );
+        
+        CREATE TABLE gptHistory (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        uuid VARCHAR(255) NOT NULL UNIQUE,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        cluster VARCHAR(255) NOT NULL,
+        namespace VARCHAR(255) NOT NULL,
+        model VARCHAR(255) NOT NULL,
+        temperature VARCHAR(255) NOT NULL
+        );
+        
+        CREATE TABLE gptMessage (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        history_id INT NOT NULL,
+        role VARCHAR(255),
+        content TEXT,
+        FOREIGN KEY (history_id) REFERENCES gptHistory(id)
+        );
 2.
 Enter the root directory
 
