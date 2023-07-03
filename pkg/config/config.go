@@ -70,6 +70,21 @@ type GPTResponse struct {
 		Index        int    `json:"index"`
 	} `json:"choices"`
 }
+type GPTRequest struct {
+	Message   string `json:"message"`
+	Cluster   string `json:"cluster"`
+	Namespace string `json:"namespace"`
+}
+
+type GPTHistory struct {
+	Id          string `json:"id"`
+	Uuid        string `json:"uuid"`
+	Timestamp   string `json:"timestamp"`
+	Cluster     string `json:"cluster"`
+	Namespace   string `json:"namespace"`
+	Model       string `json:"model"`
+	Temperature string `json:"temperature"`
+}
 
 func InitConfig() (config Config, err error) {
 	data, err := os.ReadFile("config.json")

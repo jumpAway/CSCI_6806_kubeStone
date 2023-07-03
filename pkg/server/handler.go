@@ -13,7 +13,6 @@ import (
 	"kubeStone/pkg/database"
 	"kubeStone/pkg/host"
 	"kubeStone/pkg/install"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -29,7 +28,6 @@ func SearchSer(writer http.ResponseWriter, _ *http.Request) {
 	}
 	serRow, err := db.Query("SELECT * FROM server")
 	if err != nil {
-		log.Println(err)
 		http.Error(writer, "Query servers from DB error", http.StatusInternalServerError)
 		return
 	}
@@ -271,31 +269,77 @@ func byGPT(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, "receive error"+err.Error(), http.StatusInternalServerError)
 		return
 	}
+	var gptReq config.GPTRequest
+	err = json.Unmarshal(body, &gptReq)
+	if err != nil {
+		http.Error(writer, "Error unmarshalling request body", http.StatusInternalServerError)
+		return
+	}
+
 	uuid := request.URL.Query().Get("uuid")
 	if uuid == "" {
 		http.Error(writer, "UUID not provided", http.StatusBadRequest)
 		return
 	}
+	var lastID int64
+	var db *sql.DB
+	db, err = database.InitDB(cfg)
+	if err != nil {
+		http.Error(writer, "Init Database ERROR", http.StatusInternalServerError)
+		return
+	}
+
+	model := "gpt-3.5-turbo"
+	temperature := 0.7
+	sysContent := "The namespace is " + gptReq.Namespace + ", give me the yaml directly."
+	var HistoryMap = make(map[string][]map[string]string)
 	GPT.HistoryMutex.Lock()
-	message, exist := GPT.HistoryMap[uuid]
-	if !exist {
-		message = []map[string]string{
+	message, _ := HistoryMap[uuid]
+	var uuidExists bool
+	err = db.QueryRow("SELECT EXISTS(SELECT 1 FROM gptHistory WHERE uuid = ?)", uuid).Scan(&uuidExists)
+	if err != nil {
+		http.Error(writer, "Query servers from DB error", http.StatusInternalServerError)
+		return
+	}
+	// switch context
+	if !uuidExists {
+		message := []map[string]string{
 			{
 				"role":    "system",
-				"content": "The namespace is default, give me the yaml directly.",
+				"content": sysContent,
 			},
 		}
-		GPT.HistoryMap[uuid] = message
+		HistoryMap[uuid] = message
+		result, err := db.Exec("INSERT INTO gptHistory (uuid, cluster, namespace, model, temperature) VALUES (?,?,?,?,?)", uuid, gptReq.Cluster, gptReq.Namespace, model, temperature)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		lastID, err = result.LastInsertId()
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		_, err = db.Exec("INSERT INTO gptMessage (history_id, role, content) VALUES (?,?,?)", lastID, "system", sysContent)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 	GPT.HistoryMutex.Unlock()
+	_, err = db.Exec("INSERT INTO gptMessage (history_id, role, content) VALUES (?,?,?)", lastID, "user", gptReq.Message)
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	message = append(message, map[string]string{
 		"role":    "user",
-		"content": string(body),
+		"content": gptReq.Message,
 	})
 	userIdea := map[string]interface{}{
-		"model":       "gpt-3.5-turbo",
+		"model":       model,
 		"messages":    message,
-		"temperature": 0.7,
+		"temperature": temperature,
 	}
 
 	userIdeaText, err := json.Marshal(userIdea)
@@ -325,7 +369,12 @@ func byGPT(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	answer := content.Choices[0].Message.Content
-	_, _, err = GPT.ExecuteGPT(answer)
+	_, err = db.Exec("INSERT INTO gptMessage (history_id, role, content) VALUES (?,?,?)", lastID, "assistant", answer)
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	_, _, _ = GPT.ExecuteGPT(answer)
 	if err != nil {
 		http.Error(writer, "Execute GPT error: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -340,6 +389,54 @@ func byGPT(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	GPT.HistoryMutex.Lock()
-	GPT.HistoryMap[uuid] = message
+	HistoryMap[uuid] = message
 	GPT.HistoryMutex.Unlock()
+}
+
+func GptHistory(writer http.ResponseWriter, request *http.Request) {
+	type gptRequest struct {
+		Object    string `json:"object"`
+		HistoryId string `json:"historyId"`
+	}
+	var db *sql.DB
+	db, err := database.InitDB(cfg)
+	if err != nil {
+		http.Error(writer, "Init Database ERROR", http.StatusInternalServerError)
+		return
+	}
+	body, err := io.ReadAll(request.Body)
+	if err != nil {
+		http.Error(writer, "receive error"+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	var gptReq gptRequest
+	err = json.Unmarshal(body, &gptReq)
+	if err != nil {
+		http.Error(writer, "Error parsing request body", http.StatusBadRequest)
+		return
+	}
+	if gptReq.Object == "history" {
+		serRow, err := db.Query("SELECT * FROM gptHistory")
+		if err != nil {
+			http.Error(writer, "Query servers from DB error", http.StatusInternalServerError)
+			return
+		}
+		historyS := make([]config.GPTHistory, 0)
+		for serRow.Next() {
+			var history config.GPTHistory
+			if err := serRow.Scan(&history.Id, &history.Uuid, &history.Timestamp, &history.Cluster, &history.Namespace, &history.Model, &history.Temperature); err != nil {
+				http.Error(writer, "Show servers from DB error", http.StatusInternalServerError)
+				return
+			}
+			historyS = append(historyS, history)
+		}
+		writer.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(writer).Encode(historyS); err != nil {
+			http.Error(writer, "Response error", http.StatusInternalServerError)
+			return
+		}
+	} else if gptReq.Object == "message" {
+
+	}
+
 }

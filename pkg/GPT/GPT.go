@@ -9,7 +9,6 @@ import (
 )
 
 var HistoryMutex = &sync.Mutex{}
-var HistoryMap = make(map[string][]map[string]string)
 
 func extractFile(answer string) ([]string, []string) {
 	var yamlGot []string

@@ -26,6 +26,7 @@
       width: 200px;
       height: 30px;
     }
+
   </style>
 </head>
 
@@ -39,6 +40,9 @@
 <select id="namespaceDropdown">
   <option value="">Select a namespace</option>
 </select>
+
+<h1>GPT History Information</h1>
+<div id="historyContainer" style="display:none;"></div>
 
 <script>
   function fetchClusters() {
@@ -111,27 +115,34 @@
   function newSession() {
     var uuid = generateUUID();
     var sessionWindow = window.open("", "SessionWindow" + uuid, "width=600,height=600");
-    sessionWindow.document.write(`\
-            <h1>Use GPT</h1>\
-            <input type="text" id="inputText" placeholder="Enter natural language here">\
-            <button onclick="sendText()">Send to server</button>\
-            <div id="response"></div>\
-            <script>\
-                var uuid = '` + uuid + `';\
-                function sendText() {\
-                    const text = document.getElementById("inputText").value;\
-                    const xhr = new XMLHttpRequest();\
-                    xhr.open("POST", "http://192.168.102.132:8888/byGPT?uuid=" + uuid, true);\
-                    xhr.setRequestHeader("Content-Type", "text/plain;charset=UTF-8");\
-                    xhr.onreadystatechange = function () {\
-                        if (xhr.readyState === 4 && xhr.status === 200) {\
-                            document.getElementById("response").innerHTML = xhr.responseText;\
-                        }\
-                    };\
-                    xhr.send(text);\
-                }\
-            <\/script>\
-        `);
+    sessionWindow.document.write(`
+                <h1>Use GPT</h1>
+                <input type="text" id="inputText" placeholder="Enter natural language here">
+                <button onclick="sendText()">Send to server</button>
+                <div id="response"></div>
+                <script>
+                    var uuid = '` + uuid + `';
+                    function sendText() {
+                        const text = document.getElementById("inputText").value;
+                        const selectedCluster = window.opener.document.getElementById("clusterDropdown").value;
+                        const selectedNamespace = window.opener.document.getElementById("namespaceDropdown").value;
+
+                        const xhr = new XMLHttpRequest();
+                        xhr.open("POST", "http://192.168.102.132:8888/byGPT?uuid=" + uuid, true);
+                        xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+                        xhr.onreadystatechange = function () {
+                            if (xhr.readyState === 4 && xhr.status === 200) {
+                                document.getElementById("response").innerHTML = xhr.responseText;
+                            }
+                        };
+                        xhr.send(JSON.stringify({
+                            message: text,
+                            cluster: selectedCluster,
+                            namespace: selectedNamespace
+                        }));
+                    }
+                <\/script>
+            `);
   }
 
   function generateUUID() {
@@ -142,6 +153,63 @@
       return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
     });
   }
+
+  document.addEventListener("DOMContentLoaded", function() {
+    fetchHistory();
+  });
+
+  function fetchHistory() {
+    const requestOptions = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ "object": "history", "historyId": "" })
+    };
+
+    fetch("http://192.168.102.132:8888/gptHistory", requestOptions)
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('Network response was not ok');
+              }
+              return response.json();
+            })
+            .then(data => {
+              // Create a table
+              let table = document.createElement('table');
+              table.className = 'table';
+
+              // Create table header
+              let thead = table.createTHead();
+              let headerRow = thead.insertRow();
+              ['Id',  'Timestamp', 'Cluster', 'Namespace', 'Model', 'Temperature'].forEach(header => {
+                let th = document.createElement('th');
+                th.innerText = header;
+                headerRow.appendChild(th);
+              });
+
+              // Populate table with data
+              let tbody = document.createElement('tbody');
+              data.forEach(item => {
+                let row = tbody.insertRow();
+                ['id',  'timestamp', 'cluster', 'namespace', 'model', 'temperature'].forEach(key => {
+                  let cell = row.insertCell();
+                  cell.innerText = item[key];
+                });
+              });
+
+              // Append tbody to table
+              table.appendChild(tbody);
+
+              // Display the table in historyContainer
+              const historyContainer = document.getElementById('historyContainer');
+              historyContainer.appendChild(table);
+              historyContainer.style.display = 'block';
+            })
+            .catch(error => {
+              console.error("Error fetching the history data: ", error);
+            });
+  }
+
+
 </script>
 
 <script src='script.js'></script>

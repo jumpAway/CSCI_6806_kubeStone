@@ -28,6 +28,7 @@ func (e *engine) InitHandler() {
 	e.addRoute("GET", "/getCluster", searchCluster)
 	e.addRoute("POST", "/createCluster", CreateCluster)
 	e.addRoute("POST", "/byGPT", byGPT)
+	e.addRoute("POST", "/gptHistory", GptHistory)
 }
 
 func (e *engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
