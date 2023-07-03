@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"golang.org/x/crypto/ssh"
 	"kubeStone/pkg/config"
-	"kubeStone/pkg/encrypt"
 	"log"
 	"os"
 	"os/exec"
@@ -24,7 +23,7 @@ func ExecCmd(commands []string, server config.Server) error {
 	sshCfg := &ssh.ClientConfig{
 		User: server.Username,
 		Auth: []ssh.AuthMethod{
-			ssh.Password(encrypt.GetMD5Hash(server.Password)),
+			ssh.Password(server.Password),
 		},
 		Timeout:         5 * time.Second,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
