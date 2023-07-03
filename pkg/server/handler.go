@@ -492,14 +492,7 @@ func getClusterRes(writer http.ResponseWriter, request *http.Request) {
 			}
 			for _, context := range kubeConfig.Contexts {
 				token = kubeConfig.AuthInfos[context.AuthInfo].Token
-				switch clusterReq.Resource {
-				case "pod":
-					resp, err = k8s.GetPods(cluster, token, clusterReq.Namespace)
-				case "service":
-				case "deployment":
-				case "daemonset":
-				default:
-				}
+				resp, err = k8s.GetRes(cluster, token, clusterReq.Namespace, clusterReq.Resource)
 			}
 			if err != nil {
 				http.Error(writer, "Fail to get resources", http.StatusInternalServerError)
@@ -523,14 +516,7 @@ func getClusterRes(writer http.ResponseWriter, request *http.Request) {
 		for contextName, context := range kubeConfig.Contexts {
 			if contextName == cluster.Context {
 				token = kubeConfig.AuthInfos[context.AuthInfo].Token
-				switch clusterReq.Resource {
-				case "pod":
-					resp, err = k8s.GetPods(cluster, token, clusterReq.Namespace)
-				case "service":
-				case "deployment":
-				case "daemonset":
-				default:
-				}
+				resp, err = k8s.GetRes(cluster, token, clusterReq.Namespace, clusterReq.Resource)
 			}
 			if err != nil {
 				http.Error(writer, "Fail to get resources", http.StatusInternalServerError)

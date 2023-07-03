@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPT</title>
+    <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css'>
+    <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css'><link rel="stylesheet" href="./style.css">
+    <style>
+
+        select {
+            width: 200px;
+            height: 30px;
+        }
+
+    </style>
+</head>
+
+<body>
+<h1>Deployment</h1>
+
+<select id="clusterDropdown">
+    <option value="">Select a cluster</option>
+</select>
+
+<select id="namespaceDropdown">
+    <option value="">Select a namespace</option>
+</select>
+
+<div id="tableContainer" style="margin-top: 20px;"></div>
+
+
+<script>
+    function fetchClusters() {
+        const dropdown = document.getElementById('clusterDropdown');
+
+        // Make an AJAX request to the backend service
+        fetch('http://192.168.102.132:8888/getCluster')
+            .then(response => response.json())
+            .then(data => {
+                // Iterate through the returned data and append options to the dropdown
+                data.forEach(cluster => {
+                    const option = document.createElement('option');
+                    option.value = cluster.ClusterName; // Assuming the property name is 'ClusterName'
+                    option.textContent = cluster.ClusterName;
+                    dropdown.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error fetching clusters:', error));
+    }
+
+    // Function to fetch namespaces based on selected cluster and populate second dropdown
+    function fetchNamespaces(cluster) {
+        const dropdown = document.getElementById('namespaceDropdown');
+
+        // Clear existing options
+        dropdown.innerHTML = '<option value="">Select a namespace</option>';
+
+        // Make an AJAX request to the backend service
+        fetch('http://192.168.102.132:8888/getClusterNS', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cluster })
+        })
+            .then(response => response.json())
+            .then(data => {
+                // Iterate through the returned data and append options to the dropdown
+                data.items.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.metadata.name; // Assuming the property name is 'namespace'
+                    option.textContent = item.metadata.name;
+                    dropdown.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error fetching namespaces:', error));
+    }
+
+    // Attach an event listener to the first dropdown
+    document.getElementById('clusterDropdown').addEventListener('change', function() {
+        const selectedCluster = this.value;
+        const namespaceDropdown = document.getElementById('namespaceDropdown');
+
+        // If 'Select a cluster' is chosen, clear the second dropdown
+        if (!selectedCluster) {
+            namespaceDropdown.innerHTML = '<option value="">Select a namespace</option>';
+            return;
+        }
+
+        // Fetch namespaces for the selected cluster
+        fetchNamespaces(selectedCluster);
+    });
+
+    // Call the fetchClusters function on page load
+    window.onload = fetchClusters;
+
+
+    function fetchClusterResources(cluster, namespace) {
+        // Sending a request with the selected cluster and namespace
+        fetch("http://192.168.102.132:8888/getClusterRes", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                cluster: cluster,
+                namespace: namespace,
+                RESOURCE: "deployment"
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                // Handle the data returned from the backend here
+                console.log(data);
+            })
+            .catch(error => console.error('Error fetching cluster resources:', error));
+    }
+
+    document.getElementById('clusterDropdown').addEventListener('change', function() {
+        const selectedCluster = this.value;
+        const selectedNamespace = document.getElementById('namespaceDropdown').value;
+
+        // Fetch resources whenever the cluster dropdown changes
+        fetchClusterResources(selectedCluster, selectedNamespace);
+    });
+
+    document.getElementById('namespaceDropdown').addEventListener('change', function() {
+        const selectedCluster = document.getElementById('clusterDropdown').value;
+        const selectedNamespace = this.value;
+
+        // Fetch resources whenever the namespace dropdown changes
+        fetchClusterResources(selectedCluster, selectedNamespace);
+    });
+
+    // Call the fetchClusterResources function on page load with default values
+    window.onload = function() {
+        fetchClusters(); // existing function
+        // Call the fetchClusterResources function with empty strings when the page is opened
+        fetchClusterResources("", "");
+    };
+
+
+    function fetchClusterResources(cluster, namespace) {
+        // Sending a request with the selected cluster and namespace
+        fetch("http://192.168.102.132:8888/getClusterRes", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                cluster: cluster,
+                namespace: namespace,
+                RESOURCE: "deployment"
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                // Handle the data returned from the backend here
+                const tableContainer = document.getElementById('tableContainer');
+                const items = data.items || [];
+
+                // Create a table
+                let table = "<table class='table'>";
+                // Headers
+                table += "<thead><tr><th>NAME</th><th>READY</th><th>STATUS</th><th>RESTARTS</th><th>AGE</th><th>IP</th><th>NODE</th></tr></thead>";
+                table += "<tbody>";
+
+                // Process data and populate the table
+                items.forEach(item => {
+                    const podName = item.metadata.name;
+                    const readyStatus = item.status.containerStatuses[0].ready ? "1/1" : "0/1";
+                    const status = item.status.phase;
+                    const restarts = item.status.containerStatuses[0].restartCount;
+                    const startTime = new Date(item.status.startTime);
+                    const age = Math.floor((new Date() - startTime) / (1000 * 60 * 60)) + 'h'; // in hours
+                    const ip = item.status.podIP;
+                    const nodeName = item.spec.nodeName;
+
+                    // Populate rows
+                    table += `<tr><td>${podName}</td><td>${readyStatus}</td><td>${status}</td><td>${restarts}</td><td>${age}</td><td>${ip}</td><td>${nodeName}</td><td><none></none></td><td><none></none></td></tr>`;
+                });
+
+                table += "</tbody></table>";
+
+                // Append the table to the tableContainer
+                tableContainer.innerHTML = table;
+            })
+            .catch(error => console.error('Error fetching cluster resources:', error));
+    }
+
+
+
+
+
+</script>
+
+<script src='script.js'></script>
+
+</body>
+</html>
