@@ -13,28 +13,28 @@ Currently, only the database for servers is set up. Before running the service y
 After installing mysql, create the kubeStone database and server table.
 
     mysql>
-        -> CREATE DATABASE kubeStone;
-        -> CREATE TABLE server (
-        -> id INT AUTO_INCREMENT PRIMARY KEY,
-        -> name VARCHAR(255) NOT NULL,
-        -> ip VARCHAR(15) NOT NULL UNIQUE,
-        -> port VARCHAR(15) NOT NULL,
-        -> user VARCHAR(255) NOT NULL,
-        -> password VARCHAR(255) NOT NULL               //Temporarily stored in plaintext for testing purposes only.
-        -> );
+        CREATE DATABASE kubeStone;
+        CREATE TABLE server (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        ip VARCHAR(15) NOT NULL UNIQUE,
+        port VARCHAR(15) NOT NULL,
+        user VARCHAR(255) NOT NULL,
+        password VARCHAR(255) NOT NULL 
+        );
 
-        > CREATE TABLE cluster (
-        -> id INT AUTO_INCREMENT PRIMARY KEY,
-        -> cluster_name VARCHAR(255) NOT NULL UNIQUE,
-        -> version VARCHAR(15) NOT NULL,
-        -> CNI VARCHAR(15) NOT NULL,
-        -> ServiceSubnet VARCHAR(15) NOT NULL,
-        -> PodSubnet VARCHAR(15) NOT NULL,
-        -> ProxyMode VARCHAR(15) NOT NULL,
-        -> master VARCHAR(15) NOT NULL,
-        -> node VARCHAR(255) NOT NULL,
-        -> context VARCHAR(255) NOT NULL UNIQUE
-        -> );
+        CREATE TABLE cluster (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        cluster_name VARCHAR(255) NOT NULL UNIQUE,
+        version VARCHAR(15) NOT NULL,
+        CNI VARCHAR(15) NOT NULL,
+        ServiceSubnet VARCHAR(15) NOT NULL,
+        PodSubnet VARCHAR(15) NOT NULL,
+        ProxyMode VARCHAR(15) NOT NULL,
+        master VARCHAR(15) NOT NULL,
+        node VARCHAR(255) NOT NULL,
+        context VARCHAR(255) NOT NULL UNIQUE
+        );
         
         CREATE TABLE gptHistory (
         id INT AUTO_INCREMENT PRIMARY KEY,
