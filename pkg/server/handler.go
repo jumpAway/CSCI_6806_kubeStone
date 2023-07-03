@@ -13,6 +13,7 @@ import (
 	"kubeStone/pkg/database"
 	"kubeStone/pkg/host"
 	"kubeStone/pkg/install"
+	"kubeStone/pkg/k8s"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -451,28 +452,12 @@ func GptHistory(writer http.ResponseWriter, request *http.Request) {
 	}
 }
 
-func getClusterPod(writer http.ResponseWriter, request *http.Request) {
-	type ClusterRequest struct {
-		Cluster string `json:"cluster"`
-	}
+func getClusterRes(writer http.ResponseWriter, request *http.Request) {
 	body, _ := io.ReadAll(request.Body)
-	var clusterReq ClusterRequest
+	var clusterReq config.ResourceRequest
 	err := json.Unmarshal(body, &clusterReq)
 	if err != nil {
 		http.Error(writer, "Error parsing request body", http.StatusBadRequest)
-		return
-	}
-	var db *sql.DB
-	db, err = database.InitDB(cfg)
-	if err != nil {
-		http.Error(writer, "Init Database ERROR", http.StatusInternalServerError)
-		return
-	}
-	var cluster config.Cluster
-	var id int
-	err = db.QueryRow("SELECT * FROM cluster WHERE cluster_name = ?", clusterReq.Cluster).Scan(&id, &cluster.ClusterName, &cluster.Version, &cluster.CNI, &cluster.ServiceSubnet, &cluster.PodSubnet, &cluster.ProxyMode, &cluster.Master, &cluster.Node, &cluster.Context)
-	if err != nil {
-		http.Error(writer, "Query servers from DB error", http.StatusInternalServerError)
 		return
 	}
 	ConfigFile := filepath.Join(homedir.HomeDir(), ".kube", "config")
@@ -482,46 +467,82 @@ func getClusterPod(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
+	var db *sql.DB
+	db, err = database.InitDB(cfg)
+	if err != nil {
+		http.Error(writer, "Init Database ERROR", http.StatusInternalServerError)
+		return
+	}
+	var cluster config.Cluster
 	var token string
-	for contextName, context := range kubeConfig.Contexts {
-		if contextName == cluster.Context {
-			token = kubeConfig.AuthInfos[context.AuthInfo].Token
-			break
-		}
-	}
-	req, err := http.NewRequest("GET", "https://"+cluster.Master+":6443/api/v1/namespaces", nil)
-	if err != nil {
-		http.Error(writer, "Error creating request", http.StatusInternalServerError)
-		return
-	}
-	req.Header.Set("Authorization", "Bearer "+token)
-
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		http.Error(writer, "Error sending request to Kubernetes API", http.StatusInternalServerError)
-		return
-	}
-
-	body, err = io.ReadAll(resp.Body)
-	if err != nil {
-		http.Error(writer, "Error reading response body", http.StatusInternalServerError)
-		return
-	}
-	var namespaces config.Namespace
-	err = json.Unmarshal(body, &namespaces)
-	if err != nil {
-		http.Error(writer, "Error unmarshalling response body", http.StatusInternalServerError)
-		return
-	}
-
+	var resp *http.Response
 	writer.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(writer).Encode(namespaces); err != nil {
-		http.Error(writer, "Response error", http.StatusInternalServerError)
-		return
+	if clusterReq.Cluster == "" {
+		clusterRow, err := db.Query("SELECT * FROM cluster")
+		if err != nil {
+			http.Error(writer, "Query servers from DB error", http.StatusInternalServerError)
+			return
+		}
+		for clusterRow.Next() {
+			var cluster config.Cluster
+			var id int
+			if err := clusterRow.Scan(&id, &cluster.ClusterName, &cluster.Version, &cluster.CNI, &cluster.ServiceSubnet, &cluster.PodSubnet, &cluster.ProxyMode, &cluster.Master, &cluster.Node, &cluster.Context); err != nil {
+				http.Error(writer, "Show servers from DB error", http.StatusInternalServerError)
+				return
+			}
+			for _, context := range kubeConfig.Contexts {
+				token = kubeConfig.AuthInfos[context.AuthInfo].Token
+				switch clusterReq.Resource {
+				case "pod":
+					resp, err = k8s.GetPods(cluster, token, clusterReq.Namespace)
+				case "service":
+				case "deployment":
+				case "daemonset":
+				default:
+				}
+			}
+			if err != nil {
+				http.Error(writer, "Fail to get resources", http.StatusInternalServerError)
+				return
+			} else {
+				data, _ := io.ReadAll(resp.Body)
+				_, err := writer.Write(data)
+				if err != nil {
+					http.Error(writer, "Fail to response resources", http.StatusInternalServerError)
+					return
+				}
+			}
+		}
+	} else {
+		var id int
+		err = db.QueryRow("SELECT * FROM cluster WHERE cluster_name = ?", clusterReq.Cluster).Scan(&id, &cluster.ClusterName, &cluster.Version, &cluster.CNI, &cluster.ServiceSubnet, &cluster.PodSubnet, &cluster.ProxyMode, &cluster.Master, &cluster.Node, &cluster.Context)
+		if err != nil {
+			http.Error(writer, "Query servers from DB error", http.StatusInternalServerError)
+			return
+		}
+		for contextName, context := range kubeConfig.Contexts {
+			if contextName == cluster.Context {
+				token = kubeConfig.AuthInfos[context.AuthInfo].Token
+				switch clusterReq.Resource {
+				case "pod":
+					resp, err = k8s.GetPods(cluster, token, clusterReq.Namespace)
+				case "service":
+				case "deployment":
+				case "daemonset":
+				default:
+				}
+			}
+			if err != nil {
+				http.Error(writer, "Fail to get resources", http.StatusInternalServerError)
+				return
+			} else {
+				data, _ := io.ReadAll(resp.Body)
+				_, err := writer.Write(data)
+				if err != nil {
+					http.Error(writer, "Fail to response resources", http.StatusInternalServerError)
+					return
+				}
+			}
+		}
 	}
 }

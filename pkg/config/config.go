@@ -92,6 +92,11 @@ type GPTMessage struct {
 	Role      string `json:"role"`
 	Content   string `json:"content"`
 }
+type ResourceRequest struct {
+	Cluster   string `json:"cluster"`
+	Namespace string `json:"namespace"`
+	Resource  string `json:"resource"`
+}
 
 type Namespace struct {
 	Items []struct {
