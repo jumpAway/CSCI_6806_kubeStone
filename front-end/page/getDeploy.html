@@ -138,7 +138,6 @@
 
 
     function fetchClusterResources(cluster, namespace) {
-        // Sending a request with the selected cluster and namespace
         fetch("http://192.168.102.132:8888/getClusterRes", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -150,38 +149,29 @@
         })
             .then(response => response.json())
             .then(data => {
-                // Handle the data returned from the backend here
                 const tableContainer = document.getElementById('tableContainer');
                 const items = data.items || [];
-
-                // Create a table
                 let table = "<table class='table'>";
-                // Headers
-                table += "<thead><tr><th>NAME</th><th>READY</th><th>STATUS</th><th>RESTARTS</th><th>AGE</th><th>IP</th><th>NODE</th></tr></thead>";
+                table += "<thead><tr><th>NAME</th><th>READY</th><th>UP-TO-DATE</th><th>AVAILABLE</th><th>AGE</th><th>CONTAINERS</th><th>IMAGES</th><th>SELECTOR</th></tr></thead>";
                 table += "<tbody>";
-
-                // Process data and populate the table
                 items.forEach(item => {
-                    const podName = item.metadata.name;
-                    const readyStatus = item.status.containerStatuses[0].ready ? "1/1" : "0/1";
-                    const status = item.status.phase;
-                    const restarts = item.status.containerStatuses[0].restartCount;
-                    const startTime = new Date(item.status.startTime);
-                    const age = Math.floor((new Date() - startTime) / (1000 * 60 * 60)) + 'h'; // in hours
-                    const ip = item.status.podIP;
-                    const nodeName = item.spec.nodeName;
+                    const name = item.metadata.name;
+                    const ready = item.status.readyReplicas + "/" + item.spec.replicas;
+                    const upToDate = item.status.updatedReplicas;
+                    const available = item.status.availableReplicas;
+                    const creationTimestamp = new Date(item.metadata.creationTimestamp);
+                    const age = Math.floor((new Date() - creationTimestamp) / (1000 * 60 * 60)) + 'h'; // in hours
+                    const containers = item.spec.template.spec.containers.map(c => c.name).join(',');
+                    const images = item.spec.template.spec.containers.map(c => c.image).join(',');
+                    const selector = Object.keys(item.spec.selector.matchLabels).map(key => key + "=" + item.spec.selector.matchLabels[key]).join(',');
 
-                    // Populate rows
-                    table += `<tr><td>${podName}</td><td>${readyStatus}</td><td>${status}</td><td>${restarts}</td><td>${age}</td><td>${ip}</td><td>${nodeName}</td><td><none></none></td><td><none></none></td></tr>`;
+                    table += `<tr><td>${name}</td><td>${ready}</td><td>${upToDate}</td><td>${available}</td><td>${age}</td><td>${containers}</td><td>${images}</td><td>${selector}</td></tr>`;
                 });
-
                 table += "</tbody></table>";
-
-                // Append the table to the tableContainer
                 tableContainer.innerHTML = table;
-            })
-            .catch(error => console.error('Error fetching cluster resources:', error));
+            });
     }
+
 
 
 

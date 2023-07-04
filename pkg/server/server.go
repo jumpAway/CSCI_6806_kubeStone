@@ -28,7 +28,8 @@ func (e *engine) InitHandler() {
 	e.addRoute("POST", "/getClusterRes", getClusterRes)
 	e.addRoute("GET", "/getCluster", searchCluster)
 	e.addRoute("POST", "/createCluster", CreateCluster)
-	e.addRoute("POST", "/byGPT", byGPT)
+	e.addRoute("POST", "/byGPT", getGPT)
+	e.addRoute("POST", "/executeGPT", execGPT)
 	e.addRoute("POST", "/gptHistory", GptHistory)
 }
 

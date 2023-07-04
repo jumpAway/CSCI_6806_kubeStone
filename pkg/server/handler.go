@@ -251,7 +251,7 @@ func getClusterNS(writer http.ResponseWriter, request *http.Request) {
 	}
 }
 
-func byGPT(writer http.ResponseWriter, request *http.Request) {
+func getGPT(writer http.ResponseWriter, request *http.Request) {
 	gptApiKey, err := os.ReadFile("/root/API_KEY")
 	if err != nil || len(gptApiKey) == 0 {
 		http.Error(writer, "Set API key error", http.StatusInternalServerError)
@@ -321,7 +321,13 @@ func byGPT(writer http.ResponseWriter, request *http.Request) {
 		}
 	}
 	GPT.HistoryMutex.Unlock()
-	_, err = db.Exec("INSERT INTO gptMessage (history_id, role, content) VALUES (?,?,?)", lastID, "user", gptReq.Message)
+	var lastHis config.GPTHistory
+	err = db.QueryRow("SELECT * FROM gptHistory where uuid=?", uuid).Scan(&lastHis.Id, &lastHis.Uuid, &lastHis.Timestamp, &lastHis.Cluster, &lastHis.Namespace, &lastHis.Model, &lastHis.Temperature)
+	if err != nil {
+		http.Error(writer, "Query servers from DB error", http.StatusInternalServerError)
+		return
+	}
+	_, err = db.Exec("INSERT INTO gptMessage (history_id, role, content) VALUES (?,?,?)", lastHis.Id, "user", gptReq.Message)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
@@ -363,12 +369,13 @@ func byGPT(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	answer := content.Choices[0].Message.Content
-	_, err = db.Exec("INSERT INTO gptMessage (history_id, role, content) VALUES (?,?,?)", lastID, "assistant", answer)
+	_, err = db.Exec("INSERT INTO gptMessage (history_id, role, content) VALUES (?,?,?)", lastHis.Id, "assistant", answer)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	_, _, _ = GPT.ExecuteGPT(answer)
+	yaml, _ := GPT.ExtractFile(answer)
+	//_, _, err = GPT.ExecuteGPT(answer)
 	if err != nil {
 		http.Error(writer, "Execute GPT error: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -377,7 +384,11 @@ func byGPT(writer http.ResponseWriter, request *http.Request) {
 		"role":    "assistant",
 		"content": answer,
 	})
-	_, err = writer.Write([]byte(answer))
+	if yaml == nil {
+		_, err = writer.Write([]byte(""))
+	} else {
+		_, err = writer.Write([]byte(yaml[0]))
+	}
 	if err != nil {
 		http.Error(writer, "write error"+err.Error(), http.StatusInternalServerError)
 		return
@@ -385,6 +396,15 @@ func byGPT(writer http.ResponseWriter, request *http.Request) {
 	GPT.HistoryMutex.Lock()
 	HistoryMap[uuid] = message
 	GPT.HistoryMutex.Unlock()
+}
+
+func execGPT(writer http.ResponseWriter, request *http.Request) {
+	body, _ := io.ReadAll(request.Body)
+	_, err := writer.Write(body)
+	if err != nil {
+		http.Error(writer, "write error"+err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func GptHistory(writer http.ResponseWriter, request *http.Request) {

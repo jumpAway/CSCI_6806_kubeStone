@@ -10,7 +10,7 @@ import (
 
 var HistoryMutex = &sync.Mutex{}
 
-func extractFile(answer string) ([]string, []string) {
+func ExtractFile(answer string) ([]string, []string) {
 	var yamlGot []string
 	var cmdGot []string
 	yaml := ""
@@ -46,7 +46,7 @@ func extractFile(answer string) ([]string, []string) {
 }
 
 func ExecuteGPT(answer string) ([]string, []string, error) {
-	yamlGot, cmdGot := extractFile(answer)
+	yamlGot, cmdGot := ExtractFile(answer)
 	if yamlGot[0] == "" {
 
 	} else {
