@@ -11,6 +11,7 @@ import (
 	"kubeStone/pkg/GPT"
 	"kubeStone/pkg/config"
 	"kubeStone/pkg/database"
+	"kubeStone/pkg/encrypt"
 	"kubeStone/pkg/host"
 	"kubeStone/pkg/install"
 	"net/http"
@@ -80,7 +81,7 @@ func AddSer(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, "Init Database ERROR", http.StatusInternalServerError)
 		return
 	}
-	_, err = db.Exec("INSERT INTO server (name, ip, port, user, password) VALUES (?,?,?,?,?)", server.Hostname, server.IP, server.Port, server.Username, server.Password)
+	_, err = db.Exec("INSERT INTO server (name, ip, port, user, password) VALUES (?,?,?,?,?)", server.Hostname, server.IP, server.Port, server.Username, encrypt.GetMD5Hash(server.Password))
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
