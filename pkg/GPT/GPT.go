@@ -9,6 +9,7 @@ import (
 )
 
 var HistoryMutex = &sync.Mutex{}
+var HistoryMap = make(map[string][]map[string]string)
 
 func ExtractFile(answer string) ([]string, []string) {
 	var yamlGot []string
@@ -30,7 +31,7 @@ func ExtractFile(answer string) ([]string, []string) {
 				yaml = yaml + line + "\n"
 			}
 		}
-		if line == "```" {
+		if line == "```" || line == "```shell" {
 			for scanner.Scan() {
 				line := scanner.Text()
 				if line == "```" {

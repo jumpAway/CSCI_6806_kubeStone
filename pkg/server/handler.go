@@ -285,10 +285,9 @@ func getGPT(writer http.ResponseWriter, request *http.Request) {
 
 	model := "gpt-3.5-turbo"
 	temperature := 0.7
-	sysContent := "The namespace is " + gptReq.Namespace + ", give me the yaml directly."
-	var HistoryMap = make(map[string][]map[string]string)
+	sysContent := "Give me the yaml or kubectl command. That will act in namespace " + gptReq.Namespace + ". yaml uses the separators ```yaml'' and ````'', and the kubectl command uses the separators ```shell'' and `````''. If it is a delete task, only the kubectl command is given.If the task is created, only the yaml is given."
 	GPT.HistoryMutex.Lock()
-	message, _ := HistoryMap[uuid]
+	message, _ := GPT.HistoryMap[uuid]
 	var uuidExists bool
 	err = db.QueryRow("SELECT EXISTS(SELECT 1 FROM gptHistory WHERE uuid = ?)", uuid).Scan(&uuidExists)
 	if err != nil {
@@ -303,7 +302,7 @@ func getGPT(writer http.ResponseWriter, request *http.Request) {
 				"content": sysContent,
 			},
 		}
-		HistoryMap[uuid] = message
+		GPT.HistoryMap[uuid] = message
 		result, err := db.Exec("INSERT INTO gptHistory (uuid, cluster, namespace, model, temperature) VALUES (?,?,?,?,?)", uuid, gptReq.Cluster, gptReq.Namespace, model, temperature)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -320,6 +319,7 @@ func getGPT(writer http.ResponseWriter, request *http.Request) {
 			return
 		}
 	}
+	message, _ = GPT.HistoryMap[uuid]
 	GPT.HistoryMutex.Unlock()
 	var lastHis config.GPTHistory
 	err = db.QueryRow("SELECT * FROM gptHistory where uuid=?", uuid).Scan(&lastHis.Id, &lastHis.Uuid, &lastHis.Timestamp, &lastHis.Cluster, &lastHis.Namespace, &lastHis.Model, &lastHis.Temperature)
@@ -374,7 +374,7 @@ func getGPT(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	yaml, _ := GPT.ExtractFile(answer)
+	yaml, cmd := GPT.ExtractFile(answer)
 	//_, _, err = GPT.ExecuteGPT(answer)
 	if err != nil {
 		http.Error(writer, "Execute GPT error: "+err.Error(), http.StatusInternalServerError)
@@ -384,8 +384,10 @@ func getGPT(writer http.ResponseWriter, request *http.Request) {
 		"role":    "assistant",
 		"content": answer,
 	})
-	if yaml == nil {
+	if yaml == nil && cmd == nil {
 		_, err = writer.Write([]byte(""))
+	} else if yaml == nil && cmd != nil {
+		_, err = writer.Write([]byte(cmd[0]))
 	} else {
 		_, err = writer.Write([]byte(yaml[0]))
 	}
@@ -394,7 +396,7 @@ func getGPT(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	GPT.HistoryMutex.Lock()
-	HistoryMap[uuid] = message
+	GPT.HistoryMap[uuid] = message
 	GPT.HistoryMutex.Unlock()
 }
 
