@@ -402,10 +402,24 @@ func getGPT(writer http.ResponseWriter, request *http.Request) {
 
 func execGPT(writer http.ResponseWriter, request *http.Request) {
 	body, _ := io.ReadAll(request.Body)
-	_, err := writer.Write(body)
+	var req config.GPTRequest
+	err := json.Unmarshal(body, &req)
 	if err != nil {
-		http.Error(writer, "write error"+err.Error(), http.StatusInternalServerError)
+		http.Error(writer, "Execute yaml error: "+err.Error(), http.StatusInternalServerError)
 		return
+	}
+	if strings.HasPrefix(req.Message, "kubectl") {
+		err := GPT.ExecuteKubectl(req.Message)
+		if err != nil {
+			http.Error(writer, "Execute kubectl error: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		err := GPT.ExecuteYaml(req.Message)
+		if err != nil {
+			http.Error(writer, "Execute yaml error: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 }
 

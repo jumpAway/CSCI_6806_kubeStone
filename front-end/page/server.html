@@ -45,7 +45,7 @@
                 // Create table header
                 let thead = table.createTHead();
                 let headerRow = thead.insertRow();
-                ['Hostname', 'IP Address', 'Port', 'Username', 'Password'].forEach(header => {
+                ['Hostname', 'IP Address', 'Port', 'Username'].forEach(header => {
                     let th = document.createElement('th');
                     th.innerText = header;
                     headerRow.appendChild(th);
@@ -63,8 +63,6 @@
                     cell3.innerText = item.port;
                     let cell4 = row.insertCell();
                     cell4.innerText = item.username;
-                    let cell5 = row.insertCell();
-                    cell5.innerText = item.password;
                 });
 
                 // Append tbody to table

@@ -76,6 +76,7 @@ func SetNode(node config.Server, master config.Server, seq int) error {
 	}
 	commands := []string{
 		"echo \"" + master.IP + " master\" >> /etc/hosts",
+		"systemctl enable kubelet",
 		string(joinCmd),
 	}
 	err = ExecCmd(commands, node)

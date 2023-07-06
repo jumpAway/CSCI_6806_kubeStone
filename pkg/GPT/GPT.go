@@ -2,6 +2,7 @@ package GPT
 
 import (
 	"bufio"
+	yaml2 "github.com/ghodss/yaml"
 	"os"
 	"os/exec"
 	"strings"
@@ -46,32 +47,44 @@ func ExtractFile(answer string) ([]string, []string) {
 	return yamlGot, cmdGot
 }
 
-func ExecuteGPT(answer string) ([]string, []string, error) {
-	yamlGot, cmdGot := ExtractFile(answer)
-	if yamlGot[0] == "" {
-
-	} else {
-		cmd := exec.Command("kubectl", "config", "use-context", "context1")
-		err := cmd.Run()
-		if err != nil {
-			return yamlGot, cmdGot, err
-		}
-		for _, yaml := range yamlGot {
-			filePath := "/tmp/kubeStone_gpt.yaml"
-			file, err := os.Create(filePath)
-			if err != nil {
-				return yamlGot, cmdGot, err
-			}
-			_, err = file.WriteString(yaml)
-			if err != nil {
-				return yamlGot, cmdGot, err
-			}
-			cmd = exec.Command("kubectl", "apply", "-f", "/tmp/kubeStone_gpt.yaml")
-			err = cmd.Run()
-			if err != nil {
-				return yamlGot, cmdGot, err
-			}
-		}
+func ExecuteYaml(json string) error {
+	yaml, err := yaml2.JSONToYAML([]byte(json))
+	if err != nil {
+		return err
 	}
-	return yamlGot, cmdGot, nil
+	cmd := exec.Command("kubectl", "config", "use-context", "context1")
+	err = cmd.Run()
+	if err != nil {
+		return err
+	}
+	filePath := "/tmp/kubeStone_gpt.yaml"
+	file, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	_, err = file.WriteString(string(yaml))
+	if err != nil {
+		return err
+	}
+	cmd = exec.Command("kubectl", "apply", "-f", "/tmp/kubeStone_gpt.yaml")
+	err = cmd.Run()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func ExecuteKubectl(kubeCmd string) error {
+	cmd := exec.Command("kubectl", "config", "use-context", "context1")
+	args := strings.Fields(kubeCmd)
+	err := cmd.Run()
+	if err != nil {
+		return err
+	}
+	cmd = exec.Command("kubectl", args[1:]...)
+	err = cmd.Run()
+	if err != nil {
+		return err
+	}
+	return nil
 }
