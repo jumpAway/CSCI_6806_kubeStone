@@ -12,7 +12,7 @@ function InitSer(){
 }
 function testConnectivity() {
     const formData = InitSer();
-    fetch("http://127.0.0.1:8888/testServer", {
+    fetch("http://kubestonebackend:8888/testServer", {
         method: "POST",
         body: JSON.stringify(formData),
         headers: {
@@ -33,7 +33,7 @@ function testConnectivity() {
 
 function addServer() {
     const formData = InitSer();
-    fetch("http://127.0.0.1:8888/addServer", {
+    fetch("http://kubestonebackend:8888/addServer", {
         method: "POST",
         body: JSON.stringify(formData),
         headers: {

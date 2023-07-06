@@ -136,7 +136,7 @@
             return data;
         });
 
-        fetch('http://192.168.102.132:8888/createCluster', {
+        fetch('http://kubestonebackend:8888/createCluster', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -164,7 +164,7 @@
     }
 
     function fetchServers(select) {
-        fetch('http://192.168.102.132:8888/getServer')
+        fetch('http://kubestonebackend:8888/getServer')
             .then(response => response.json())
             .then(data => {
                 select.innerHTML = '';

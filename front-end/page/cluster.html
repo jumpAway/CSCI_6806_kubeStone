@@ -37,7 +37,7 @@
     });
 
     function searchCluster() {
-        fetch("http://192.168.102.132:8888/getCluster")
+        fetch("http://kubestonebackend:8888/getCluster")
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Network response was not ok');

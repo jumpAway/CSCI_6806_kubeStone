@@ -51,7 +51,7 @@
     const dropdown = document.getElementById('clusterDropdown');
 
     // Make an AJAX request to the backend service
-    fetch('http://192.168.102.132:8888/getCluster')
+    fetch('http://kubestonebackend:8888/getCluster')
             .then(response => response.json())
             .then(data => {
               // Iterate through the returned data and append options to the dropdown
@@ -73,7 +73,7 @@
     dropdown.innerHTML = '<option value="">Select a namespace</option>';
 
     // Make an AJAX request to the backend service
-    fetch('http://192.168.102.132:8888/getClusterNS', {
+    fetch('http://kubestonebackend:8888/getClusterNS', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cluster })
@@ -171,7 +171,7 @@
                     lastText = document.getElementById("inputText").value;
                     const selectedCluster = window.opener.document.getElementById("clusterDropdown").value;
                     const selectedNamespace = window.opener.document.getElementById("namespaceDropdown").value;
-                    sendRequest(lastText, selectedCluster, selectedNamespace, "http://192.168.102.132:8888/byGPT?uuid=" + uuid);
+                    sendRequest(lastText, selectedCluster, selectedNamespace, "http://kubestonebackend:8888/byGPT?uuid=" + uuid);
                 }
 
                 function sendRequest(text, cluster, namespace, url) {
@@ -209,13 +209,13 @@
                 function retry() {
                     const selectedCluster = window.opener.document.getElementById("clusterDropdown").value;
                     const selectedNamespace = window.opener.document.getElementById("namespaceDropdown").value;
-                    sendRequest(lastText, selectedCluster, selectedNamespace, "http://192.168.102.132:8888/byGPT?uuid=" + uuid);
+                    sendRequest(lastText, selectedCluster, selectedNamespace, "http://kubestonebackend:8888/byGPT?uuid=" + uuid);
                 }
 
                 function execute() {
                     const selectedCluster = window.opener.document.getElementById("clusterDropdown").value;
                     const selectedNamespace = window.opener.document.getElementById("namespaceDropdown").value;
-                    sendRequest(latestResponse, selectedCluster, selectedNamespace, "http://192.168.102.132:8888/executeGPT?uuid=" + uuid);
+                    sendRequest(latestResponse, selectedCluster, selectedNamespace, "http://kubestonebackend:8888/executeGPT?uuid=" + uuid);
                 }
             <\/script>
         </body>
@@ -245,7 +245,7 @@
       body: JSON.stringify({ "object": "history", "historyId": "" })
     };
 
-    fetch("http://192.168.102.132:8888/gptHistory", requestOptions)
+    fetch("http://kubestonebackend:8888/gptHistory", requestOptions)
             .then(response => {
               if (!response.ok) {
                 throw new Error('Network response was not ok');
@@ -305,7 +305,7 @@
       body: JSON.stringify({ "object": "message", "historyId": historyId })
     };
 
-    fetch("http://192.168.102.132:8888/gptHistory", requestOptions)
+    fetch("http://kubestonebackend:8888/gptHistory", requestOptions)
             .then(response => {
               if (!response.ok) {
                 throw new Error('Network response was not ok');
