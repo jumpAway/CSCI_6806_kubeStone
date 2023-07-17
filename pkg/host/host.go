@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"golang.org/x/crypto/ssh"
 	"kubeStone/pkg/config"
+	"kubeStone/pkg/hash"
 	"time"
 )
 
@@ -11,7 +12,7 @@ func ConnectSer(server config.Server) error {
 	sshCfg := &ssh.ClientConfig{
 		User: server.Username,
 		Auth: []ssh.AuthMethod{
-			ssh.Password(server.Password),
+			ssh.Password(hash.XorDecrypt(server.Password)),
 		},
 		Timeout:         5 * time.Second,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),

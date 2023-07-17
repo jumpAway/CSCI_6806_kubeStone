@@ -5,6 +5,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/hex"
 	"io"
 )
 
@@ -40,4 +41,17 @@ func Decrypt(ciphertext string) string {
 	ciphertextBytes = ciphertextBytes[nonceSize:]
 	plaintext, _ := gcm.Open(nil, nonce, ciphertextBytes, nil)
 	return string(plaintext)
+}
+
+// 异或解密函数
+func XorDecrypt(hexStr string) string {
+	result := ""
+	key := "this is a secret key."
+	for i := 0; i < len(hexStr); i += 2 {
+		byteStr := hexStr[i : i+2]
+		byteVal, _ := hex.DecodeString(byteStr)
+		charCode := int(byteVal[0]) ^ int(key[i/2%len(key)])
+		result += string(charCode)
+	}
+	return result
 }
