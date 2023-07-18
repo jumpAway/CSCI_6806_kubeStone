@@ -1,4 +1,4 @@
-
+//xorEncrypt is a simple XOR encryption function
 function xorEncrypt(str) {
     let key = 'this is a secret key.'
     let result = '';
@@ -8,7 +8,7 @@ function xorEncrypt(str) {
     }
     return stringToHex(result);
 }
-
+//stringToHex convert strings to hexadecimal representation
 function stringToHex(str) {
     let hex = '';
     for (let i = 0; i < str.length; i++) {
