@@ -43,7 +43,7 @@ func Decrypt(ciphertext string) string {
 	return string(plaintext)
 }
 
-//XorDecrypt is a simple XOR decryption function
+// XorDecrypt is a simple XOR decryption function
 func XorDecrypt(hexStr string) string {
 	result := ""
 	key := "this is a secret key."
