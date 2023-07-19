@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Server Graph</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<canvas id="serverChart" width="400" height="300"></canvas>
+
+<script>
+  function searchServer() {
+    fetch("http://kubestonebackend:8888/getServer")
+            .then(response => response.json())
+            .then(data => {
+              const hostnames = data.map(item => item.hostname);
+              const counts = {};
+
+              // Count the occurrence of each hostname
+              hostnames.forEach(hostname => {
+                counts[hostname] = counts[hostname] ? counts[hostname] + 1 : 1;
+              });
+
+              // Prepare the data for the chart
+              const labels = Object.keys(counts);
+              const values = Object.values(counts);
+
+              // Create the chart using Chart.js
+              new Chart('serverChart', {
+                type: 'bar',
+                data: {
+                  labels: labels,
+                  datasets: [{
+                    label: 'Number of Servers',
+                    data: values,
+                    backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                  }]
+                },
+                options: {
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      stepSize: 1
+                    }
+                  }
+                }
+              });
+            })
+            .catch(error => {
+              console.error("Error: " + error);
+            });
+  }
+
+  // Execute the searchServer function as soon as the page loads
+  searchServer();
+</script>
+</body>
+</html>
