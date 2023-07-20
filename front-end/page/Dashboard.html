@@ -2,17 +2,61 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Server Graph</title>
+  <title>Cluster and Server Graphs</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* CSS to beautify the webpage */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f8f8f8;
+      margin: 20px;
+    }
+    h1 {
+      font-size: 28px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .chart-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 40px;
+      padding: 20px;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    canvas {
+      max-width: 400px;
+      max-height: 300px;
+    }
+  </style>
 </head>
 <body>
-<canvas id="serverChart" width="400" height="300"></canvas>
+<h1>Cluster and Server Graphs</h1>
+
+<div class="chart-container">
+  <h2>Server Information</h2>
+  <canvas id="serverChart"></canvas>
+</div>
+
+<div class="chart-container">
+  <h2>Cluster Information</h2>
+  <canvas id="clusterChart"></canvas>
+</div>
 
 <script>
+  document.addEventListener("DOMContentLoaded", function() {
+    searchServer();
+    searchCluster();
+  });
+
   function searchServer() {
     fetch("http://kubestonebackend:8888/getServer")
             .then(response => response.json())
             .then(data => {
+              console.log("Server Data:", data);
+
               const hostnames = data.map(item => item.hostname);
               const counts = {};
 
@@ -53,8 +97,55 @@
             });
   }
 
-  // Execute the searchServer function as soon as the page loads
-  searchServer();
+  function searchCluster() {
+    fetch("http://kubestonebackend:8888/getCluster")
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('Network response was not ok');
+              }
+              return response.json();
+            })
+            .then(data => {
+              console.log("Cluster Data:", data);
+
+              // Count the occurrences of each cluster name
+              const clusterCounts = {};
+              data.forEach(item => {
+                const clusterName = item['ClusterName'];
+                clusterCounts[clusterName] = clusterCounts[clusterName] ? clusterCounts[clusterName] + 1 : 1;
+              });
+
+              // Prepare data for the chart
+              const labels = Object.keys(clusterCounts);
+              const values = Object.values(clusterCounts);
+
+              // Create the chart using Chart.js
+              new Chart('clusterChart', {
+                type: 'bar',
+                data: {
+                  labels: labels,
+                  datasets: [{
+                    label: 'Number of Clusters',
+                    data: values,
+                    backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                  }]
+                },
+                options: {
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      stepSize: 1
+                    }
+                  }
+                }
+              });
+            })
+            .catch(error => {
+              console.error("Error fetching the cluster data: ", error);
+            });
+  }
 </script>
 </body>
 </html>
