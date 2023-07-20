@@ -30,7 +30,6 @@ function InitSer(){
 }
 function testConnectivity() {
     const formData = InitSer();
-    console.log(formData.password);
     fetch("http://kubestonebackend:8888/testServer", {
         method: "POST",
         body: JSON.stringify(formData),
