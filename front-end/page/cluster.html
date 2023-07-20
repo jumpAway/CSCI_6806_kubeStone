@@ -49,12 +49,14 @@
                 let table = document.createElement('table');
                 table.className = 'table';
 
+                const columns = ['ClusterName', 'Version', 'CNI', 'ServiceSubnet', 'PodSubnet', 'ProxyMode', 'Master', 'Node', 'Context'];
+
                 // Create table header
                 let thead = table.createTHead();
                 let headerRow = thead.insertRow();
-                ['ClusterName', 'Version', 'CNI', 'ServiceSubnet', 'PodSubnet', 'ProxyMode', 'Master', 'Node', 'Context'].forEach(header => {
+                columns.forEach(column => {
                     let th = document.createElement('th');
-                    th.innerText = header;
+                    th.innerText = column;
                     headerRow.appendChild(th);
                 });
 
@@ -62,9 +64,9 @@
                 let tbody = document.createElement('tbody');
                 data.forEach(item => {
                     let row = tbody.insertRow();
-                    ['ClusterName', 'Version', 'CNI', 'ServiceSubnet', 'PodSubnet', 'ProxyMode', 'Master', 'Node', 'Context'].forEach(key => {
+                    columns.forEach(column => {
                         let cell = row.insertCell();
-                        cell.innerText = item[key];
+                        cell.innerText = item[column];
                     });
                 });
 
