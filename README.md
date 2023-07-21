@@ -80,7 +80,8 @@ Note:
 6. The network mode currently only supports calico, and since the calico yaml is not configured to automatically modify it for now, the pod subnet needs to be specified as the default 192.168.0.0/16. otherwise the cluster network will be NotReady;
 7. Only single-master clusters are currently supported for deployment;
 
-
+## Reference
+Thanks to https://codepen.io/rijdz/pen/zybbVK for the front-end framework!
 
 
 
