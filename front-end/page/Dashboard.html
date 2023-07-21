@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Cluster and Server Graphs</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>Cluster and Server Information</title>
   <style>
     /* CSS to beautify the webpage */
     body {
@@ -16,33 +15,46 @@
       text-align: center;
       margin-bottom: 20px;
     }
-    .chart-container {
+    .count-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 40px;
+    }
+    .count-box {
       display: flex;
       flex-direction: column;
       align-items: center;
-      margin-bottom: 40px;
       padding: 20px;
       background-color: #fff;
       border: 1px solid #ccc;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      margin: 10px;
     }
-    canvas {
-      max-width: 400px;
-      max-height: 300px;
+    .count {
+      font-size: 24px;
+      margin: 10px;
+    }
+    .image {
+      max-width: 50px;
+      margin-bottom: 10px;
     }
   </style>
 </head>
 <body>
-<h1>Cluster and Server Graphs</h1>
+<h1>Available Servers and Clusters</h1>
 
-<div class="chart-container">
-  <h2>Server Information</h2>
-  <canvas id="serverChart"></canvas>
-</div>
-
-<div class="chart-container">
-  <h2>Cluster Information</h2>
-  <canvas id="clusterChart"></canvas>
+<div class="count-container">
+  <div class="count-box">
+    <img class="image" src="https://www.freepnglogos.com/uploads/server-png/server-icon-download-icons-17.png" alt="Server Image">
+    <h2>Servers</h2>
+    <div class="count" id="serverCount">Loading...</div>
+  </div>
+  <div class="count-box">
+    <img class="image" src="https://img.icons8.com/?size=512&id=JHE4CpLodKzI&format=png" alt="Cluster Image">
+    <h2>Clusters</h2>
+    <div class="count" id="clusterCount">Loading...</div>
+  </div>
 </div>
 
 <script>
@@ -65,32 +77,11 @@
                 counts[hostname] = counts[hostname] ? counts[hostname] + 1 : 1;
               });
 
-              // Prepare the data for the chart
-              const labels = Object.keys(counts);
-              const values = Object.values(counts);
+              // Calculate total number of servers
+              const totalServers = hostnames.length;
 
-              // Create the chart using Chart.js
-              new Chart('serverChart', {
-                type: 'bar',
-                data: {
-                  labels: labels,
-                  datasets: [{
-                    label: 'Number of Servers',
-                    data: values,
-                    backgroundColor: 'rgba(75, 192, 192, 0.5)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 1
-                  }]
-                },
-                options: {
-                  scales: {
-                    y: {
-                      beginAtZero: true,
-                      stepSize: 1
-                    }
-                  }
-                }
-              });
+              // Update the count in the HTML element
+              document.getElementById("serverCount").innerText = totalServers;
             })
             .catch(error => {
               console.error("Error: " + error);
@@ -115,32 +106,11 @@
                 clusterCounts[clusterName] = clusterCounts[clusterName] ? clusterCounts[clusterName] + 1 : 1;
               });
 
-              // Prepare data for the chart
-              const labels = Object.keys(clusterCounts);
-              const values = Object.values(clusterCounts);
+              // Calculate total number of clusters
+              const totalClusters = Object.keys(clusterCounts).length;
 
-              // Create the chart using Chart.js
-              new Chart('clusterChart', {
-                type: 'bar',
-                data: {
-                  labels: labels,
-                  datasets: [{
-                    label: 'Number of Clusters',
-                    data: values,
-                    backgroundColor: 'rgba(75, 192, 192, 0.5)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 1
-                  }]
-                },
-                options: {
-                  scales: {
-                    y: {
-                      beginAtZero: true,
-                      stepSize: 1
-                    }
-                  }
-                }
-              });
+              // Update the count in the HTML element
+              document.getElementById("clusterCount").innerText = totalClusters;
             })
             .catch(error => {
               console.error("Error fetching the cluster data: ", error);
